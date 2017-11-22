@@ -51,6 +51,9 @@ class Studio(models.Model):
         (44,"VT"),
         (45,"VA"),
         (46,"WA"),
+
+
+
         (47,"WV"),
         (48,"WI"),
         (49,"WY")
@@ -267,3 +270,9 @@ class Studio(models.Model):
     state = models.IntegerField(
         "State", choices=STATE_CHOICES)
     zip_code = models.IntegerField("Zip Code")
+    association_pin = models.IntegerField("Studio PIN")
+
+class Dancer(models.Model):
+    name = models.CharField("Name", max_length=256)
+    email = models.CharField("Name", max_length=256)
+    studio = models.ForeignKey(Studio, on_delete=models.CASCADE, blank=True, null=True)

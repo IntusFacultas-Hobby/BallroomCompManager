@@ -10,9 +10,10 @@ class Competition(models.Model):
         return "%s %s" % (self.date, self.name)
 
 class Event(models.Model):
+    skill_group = models.CharField("Name", max_length=256)
     name = models.CharField("Name", max_length=256)
     time = models.TimeField("Time", auto_now=False)
-    competition = models.ForeignField(Competition, on_delete=models.CASCADE)
-
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    max_per_heat = models.IntegerField("Max Couples per Heat", default=0)
     def __str__(self):
         return self.name
