@@ -29,4 +29,5 @@ class FinalistPlace(models.Model):
     FinalistPlace is my solution to potential multiple couples being placed at the same position. An event can have many FinalistPlaces, and the place of each FinalistPlace will be automatically calculated based on scores.
     '''
     place = models.IntegerField("Place")
-    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="places")
+    couple = models.ForeignKey(Couple, on_delete=models.CASCADE, related_name="placements")
