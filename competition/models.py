@@ -1,10 +1,13 @@
 from django.db import models
-from competitor.models import Dancer
+from competitor.models import Dancer, Studio
 
 
 class Competition(models.Model):
     name = models.CharField("Name", max_length=256)
-    date = models.DateField("Date of Competition")
+    date_of_start = models.DateField("Date of Competition")
+    end_date_of_registration = models.DateField("Registration Deadline")
+    host = models.ForeignKey(Studio, on_delete=models.CASCADE,
+        related_name="competitions")
 
     def __str__(self):              # __unicode__ on Python 2
         return "%s %s" % (self.date, self.name)
@@ -24,7 +27,7 @@ class Event(models.Model):
 class Round(models.Model):
     round_number = models.IntegerField("Round Number")
     event = models.ForeignKey(Event, on_delete=models.CASCADE,
-                                related_name="heats")
+        related_name="heats")
 
 
 class Couple(models.Model):
