@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html Lang="en">
+{% load static %}
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Ballroom Comp</title>
+    <!-- This link has been provided as an example of how to reference static files -->
+    <!-- the static in the {} is dynamically filled in to the static folders present in the program -->
+    <!-- <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}"> -->    
+</head>
+<body>
+
+    
+    <!-- fill this out with your navbar -->
+    {% include 'partials/navbar.html' %}
+
+    {% if messages %}
+        <div class="container">
+            <ul id="messages" class="messages list-unstyled" style="margin-top:1em; z-index:2; text-align: center;">
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                        {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+                                <div class="alert alert-danger">{{ message }}</div>
+                        {% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+                                <div class="alert alert-success">{{ message }}</div>
+                        {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <!-- main content here -->
+    {% block content %}
+    {% endblock content %}
+    
+    <!-- javascript will go here -->
+    {% block js %}
+    {% endblock js %}
+</body>
+</html>
