@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'competition',
     'competitor',
     'django_extensions',
-    'session'
+    'session',
+    'widget_tweaks'
 ]
 
 MIDDLEWARE = [
