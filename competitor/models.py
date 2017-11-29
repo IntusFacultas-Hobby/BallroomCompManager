@@ -274,8 +274,13 @@ class Dancer(models.Model):
     name = models.CharField("Name", max_length=256)
     email = models.CharField("Name", max_length=256)
     studio = models.ForeignKey(Studio, on_delete=models.CASCADE,
-        blank=True, null=True)
+                               blank=True, null=True)
     profile = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
     )
+
+
+class Request(models.Model):
+    dancer = models.ForeignKey(Dancer, on_delete=models.CASCADE)
+    studio = models.ForeignKey(Studio, on_delete=models.CASCADE)

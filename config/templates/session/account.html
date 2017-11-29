@@ -2,4 +2,18 @@
 
 {% block content %}
 
+<div class="row">
+        {{ user.username }}
+        {{ dancer.studio|default_if_none:"Unaffiliated" }}
+</div>
+<div class="row">
+        {{ dancer.as_p }}
+</div>
+<div class="row">
+    {{ form.as_p }}
+</div>
+<div class="row">
+    {{ change_password_form.as_p }}
+</div>
+
 {% endblock %}

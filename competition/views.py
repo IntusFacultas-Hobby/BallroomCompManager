@@ -1,6 +1,5 @@
 from django.views.generic.list import ListView
 from competition.models import Competition
-from django.http import HttpResponseRedirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 

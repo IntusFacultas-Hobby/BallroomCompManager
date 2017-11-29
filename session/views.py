@@ -1,9 +1,11 @@
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.forms import PasswordChangeForm
 from django.shortcuts import render, redirect
 from django.views import View
 from session.forms import SignUpForm
+from competitor.forms import AssociationForm, DancerForm
 from competitor.models import Dancer
 
 
@@ -32,9 +34,15 @@ class ProfileView(LoginRequiredMixin, View):
         request_user = request.user
         user = User.objects.get(username=request_user.username)
         dancer = user.dancer
+        dancer_form = DancerForm(instance=user.dancer)
+        form = AssociationForm(request.user)
+        change_password_form = PasswordChangeForm(request.user)
         return render(request, 'session/account.html',
-            {
-                'user': user,
-                'dancer': dancer
-            }
-        )
+                      {
+                          'user': user,
+                          'dancer': dancer,
+                          'dancer_form': dancer_form,
+                          'form': form,
+                          'change_password_form': change_password_form,
+                      }
+                      )

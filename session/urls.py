@@ -9,6 +9,6 @@ urlpatterns = [
     url(r'^login/$', auth_views.login, name='login'),
     url(r'^logout/$', auth_views.logout, {'next_page': '/'}, name='logout'),
     url(r'^signup/$', views.signup, name='signup'),
-    url(r'^account/$', views.AccountView, name='account'),
+    url(r'^account/$', views.ProfileView.as_view(), name='account'),
     url(r'^admin/', admin.site.urls),
 ]
