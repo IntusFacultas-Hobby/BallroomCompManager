@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Studio Request{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-offset-3 col-lg-6">
+            <div class="alert alert-dismissible alert-info">
+                <strong>Heads up!</strong> Are you trying to associate with a studio? <strong>That's done from your account settings.</strong>. This is for creating a brand new studio.
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-offset-3 col-lg-6">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    Submit a Studio Creation Request
+                </div>
+                <div class="panel-body">
+                    <form class="form-horizontal" style="margin:20px;" method="post">
+                        <input type="hidden" name="type" value="studio_request">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="form-group">
+                            {{ field.label_tag }}
+                            {% render_field field class+="form-control" %}
+                            {% if field.help_text %}
+                            <small class="form-text text-muted" >{{ field.help_text }}</small>
+                            {% endif %}
+                        </div>
+                        {% if field.errors|length > 0 %}
+                        <div class="form-group">
+                            <ul>
+                                {% for error in field.errors %}
+                                <li style="color: red">{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        <button class="btn btn-primary" type="submit">Submit Request</button>
+                    </form>
+                </div>
+                <div class="panel-footer">
+                    <small>
+                        Once your submission is submitted and approved, you will be asked to pay a processing fee.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block js %}
+{{ form.media.js }}
+<script type="text/javascript">
+    $(function() {
+         $('.form-group').each(function() {
+                var formGroup = $(this),
+                    formgroupWidth = formGroup.outerWidth();
+                
+                formGroup.find('.select2-container').css('width', formgroupWidth);
+                
+            });
+            $(".select2-search__field").attr('style', "");    
+    })
+    $(window).on('resize', function() {
+        $('.form-group').each(function() {
+            var formGroup = $(this),
+                formgroupWidth = formGroup.outerWidth();
+            
+            formGroup.find('.select2-container').css('width', formgroupWidth);
+            
+        });
+    });
+</script>
+{% endblock %}

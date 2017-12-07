@@ -23,6 +23,7 @@
     <!-- <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}"> -->    
 </head>
 <body>
+    {% include 'session_security/all.html' %}
 
     
     <!-- fill this out with your navbar -->
@@ -43,10 +44,17 @@
             </ul>
         </div>
     {% endif %}
+    <script type="text/javascript">
+        setTimeout(function() {
+            $("#messages").fadeOut("quick")
+        }, 3000)
+    </script>
 
     <!-- main content here -->
-    {% block content %}
-    {% endblock content %}
+    <div class="container-fluid">
+        {% block content %}
+        {% endblock content %}
+    </div>
     
     <!-- javascript will go here -->
     {% block js %}

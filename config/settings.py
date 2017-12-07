@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     'competitor',
     'django_extensions',
     'session',
-    'widget_tweaks'
+    'session_security',
+    'widget_tweaks',
+    'django_select2'
 ]
 
 MIDDLEWARE = [
@@ -52,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'session_security.middleware.SessionSecurityMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -137,6 +140,15 @@ STATICFILES_DIRS = (
 LOGIN_REDIRECT_URL = "/"
 
 LOGIN_URL = "/login"
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SECURITY_EXPIRE_AFTER = 930
+SESSION_SECURITY_WARN_AFTER = 900
+
+SELECT2_JS = 'js/select2.full.min.js'
+
+SELECT2_CSS = 'css/select2.css'
+SELECT2_BOOTSTRAP = True
 
 # Simplified static file serving.
 # https://warehouse.python.org/project/whitenoise/

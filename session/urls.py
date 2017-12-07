@@ -10,5 +10,6 @@ urlpatterns = [
     url(r'^logout/$', auth_views.logout, {'next_page': '/'}, name='logout'),
     url(r'^signup/$', views.signup, name='signup'),
     url(r'^account/$', views.ProfileView.as_view(), name='account'),
+    url(r'^studio/$', views.StudioView.as_view(), name="studio"),
     url(r'^admin/', admin.site.urls),
 ]

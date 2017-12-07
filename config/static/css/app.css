@@ -1,6 +1,9 @@
 .table-fixed thead {
   width: 97%;
 }
+.select2-container--default .select2 {
+  width:100% !important;
+}
 table { 
   empty-cells: show; 
 }

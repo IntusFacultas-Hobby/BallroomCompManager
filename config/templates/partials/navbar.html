@@ -12,11 +12,12 @@
                     <a class="nav-link dropdown-toggle" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fa fa-cog fa-lg" aria-hidden="true"></i>
                     </a>
-                    <ul class="dropdown-menu dropdown pull-right" style="margin-left: -100px" aria-labelledby="dropdownMenu2">
+                    <ul class="dropdown-menu dropdown pull-right" style="margin-left: -150px; width: 220px;" aria-labelledby="dropdownMenu2">
                         {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'session:logout' %}">Logout</a>
                             <a class="nav-link" href="{% url 'session:account' %}">Account Settings</a>
+                            <a class="nav-link" href="{% url 'session:studio' %}">Studio Management</a>
                         </li>
                         {% else %}
                         <li class="nav-item">
