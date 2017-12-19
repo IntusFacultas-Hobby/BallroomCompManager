@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'session',
     'session_security',
     'widget_tweaks',
-    'django_select2'
+    'django_select2',
+    'bootstrap3_datetime'
 ]
 
 MIDDLEWARE = [

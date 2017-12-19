@@ -45,9 +45,12 @@ class AssociationForm(forms.Form):
             )
 
     def save(self, commit=True):
+        # delete all other requests. Only one may exist at a time
+        Request.objects.filter(dancer=self.user.dancer).delete()
         studio = Studio.objects.get(
             association_pin=self.cleaned_data['association_pin'])
-        request = Request.objects.create(user=self.user, studio=studio)
+        request = Request.objects.create(dancer=self.user.dancer,
+                                         studio=studio)
         return request
 
 

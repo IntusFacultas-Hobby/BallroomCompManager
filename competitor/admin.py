@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Studio, Dancer, StudioRequest
+from .models import Studio, Dancer, StudioRequest, Request
 
 
 def approve(modeladmin, request, queryset):
@@ -33,3 +33,4 @@ class StudioRequestAdmin(admin.ModelAdmin):
 admin.site.register(Studio)
 admin.site.register(Dancer)
 admin.site.register(StudioRequest, StudioRequestAdmin)
+admin.site.register(Request)

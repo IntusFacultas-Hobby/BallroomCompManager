@@ -1,3 +1,4 @@
+from datetime import date
 from django.db import models
 from competitor.models import Dancer, Studio
 
@@ -7,17 +8,23 @@ class Competition(models.Model):
     date_of_start = models.DateField("Date of Competition")
     end_date_of_registration = models.DateField("Registration Deadline")
     host = models.ForeignKey(Studio, on_delete=models.CASCADE,
-        related_name="competitions")
+                             related_name="competitions")
+    completed = models.BooleanField("Completed", default=False)
+
+    @property
+    def past_registration(self):
+        return date.today() > self.end_date_of_registration
 
     def __str__(self):              # __unicode__ on Python 2
-        return "%s %s" % (self.date, self.name)
+        return "%s %s" % (self.date_of_start, self.name)
 
 
 class Event(models.Model):
-    skill_group = models.CharField("Name", max_length=256)
+    skill_group = models.CharField("Skill Group", max_length=256)
     name = models.CharField("Name", max_length=256)
-    time = models.TimeField("Time", auto_now=False)
-    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    time = models.TimeField("Time", auto_now=False, blank=True, null=True)
+    competition = models.ForeignKey(
+        Competition, on_delete=models.CASCADE, related_name="events")
     max_per_heat = models.IntegerField("Max Couples per Heat", default=0)
 
     def __str__(self):
@@ -27,14 +34,14 @@ class Event(models.Model):
 class Round(models.Model):
     round_number = models.IntegerField("Round Number")
     event = models.ForeignKey(Event, on_delete=models.CASCADE,
-        related_name="heats")
+                              related_name="heats")
 
 
 class Couple(models.Model):
     lead = models.ForeignKey(Dancer, on_delete=models.CASCADE,
-        related_name="is_lead")
+                             related_name="is_lead")
     follow = models.ForeignKey(Dancer, on_delete=models.CASCADE,
-        related_name="is_follow")
+                               related_name="is_follow")
     events = models.ManyToManyField(Event)
     rounds = models.ManyToManyField(Round)
     totalMarks = models.IntegerField("Marks")
@@ -48,6 +55,6 @@ class Place(models.Model):
     '''
     place = models.IntegerField("Place")
     event = models.ForeignKey(Event, on_delete=models.CASCADE,
-        related_name="places")
+                              related_name="places")
     couple = models.ForeignKey(Couple, on_delete=models.CASCADE,
-        related_name="placements")
+                               related_name="placements")

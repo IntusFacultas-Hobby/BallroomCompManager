@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Edit Competition{% endblock %}
+
+{% block content %}
+<div class="row">
+        <div class="col-lg-offset-1 col-lg-10">
+            <div class="alert alert-dismissible alert-info">
+                <strong>Warning!</strong> It is strongly recommended not to use this page to modify a currently running or completed competition. <strong>Modifying information here can erase entries and results</strong>. If you are trying to modify a competition in progress, use the manage option on the previous screen.
+            </div>
+        </div>
+    </div>
+<div class="row">
+    <div class="col-sm-3">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h2>Edit {{competition.name}}</h2>
+            </div>
+            <div class="panel-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <input type="hidden" name="form_type" value="competition">
+                    <div class="form-group">
+                        {{ field.label_tag }}
+                        {% render_field field class+="form-control" %}<br>
+                        {% if field.help_text %}
+                        <small class="form-text text-muted" >
+                        {{ field.help_text|safe }}</small>
+                        {% endif %}
+                    </div>
+                    {% if field.errors|length > 0 %}
+                    <div class="form-group">
+                        <ul>
+                            {% for error in field.errors %}
+                            <li style="color: red">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    <button class="btn btn-primary"type="submit">Submit Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-9">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h2>Modify {{ competition.name }}'s Events</h2>
+            </div>
+            <div class="panel-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="events">
+                    {{ formset.management_form }}
+                    <table class="table table-striped">
+                        {% for form in formset %}
+                        {% if forloop.first %}
+                            <thead>
+                            <tr>
+                                {% for field in form.visible_fields %}
+                                    <th>{{ field.label|capfirst }}</th>
+                                {% endfor %}
+                            </tr>
+                            </thead>
+                        {% endif %}
+                        <tr class="{% cycle 'row1' 'row2' %} formset_row">
+                            {% for field in form.visible_fields %}
+                                <td>
+                                    {# Include the hidden fields in the form #}
+                                    {% if forloop.first %}
+                                        {% for hidden in form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                    {% endif %}
+                                    {% if field.errors|length > 0 %}
+                                    <div class="form-group">
+                                        <ul>
+                                            {% for error in field.errors %}
+                                            <li style="color: red">{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                    {% render_field field class+="form-control" %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </table>
+                    <button class="btn btn-primary" type="submit">Submit Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+        $('.formset_row').formset({
+            addText: 'Add Event',
+            deleteText: 'Remove',
+            prefix: 'events',
+            addCssClass: 'btn btn-sm btn-primary',
+            deleteCssClass: 'btn btn-sm btn-block btn-danger',
+            added: function(row) {
+                // this initializes the bootstrap datetimepicker on a new row
+                var formElements = new Array();
+                $(row).each(function(){
+                    formElements.push($(this).find(':input'));
+                });
+                $(formElements[0][4]).datetimepicker({
+                "format": "HH:mm",
+                "icons": {
+                    "date": "glyphicon glyphicon-time",
+                    "up": "fa fa-arrow-up",
+                    "down": "fa fa-arrow-down"
+                }});
+                $(formElements[0][4]).next().click(function(event) {
+                    $(formElements[0][4]).data("DateTimePicker").show();
+                })
+            }
+        });
+        $('.datepicker').on(
+            'dp.show',
+            function(e) {
+                $(".bootstrap-datetimepicker-widget").css(
+                "background-color", "#ffffff");
+        });
+</script>
+{% endblock %}

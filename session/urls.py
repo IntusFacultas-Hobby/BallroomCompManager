@@ -12,4 +12,11 @@ urlpatterns = [
     url(r'^account/$', views.ProfileView.as_view(), name='account'),
     url(r'^studio/$', views.StudioView.as_view(), name="studio"),
     url(r'^admin/', admin.site.urls),
+    url(r'^dancers/delete/$', views.DeleteDancer.as_view(),
+        name="delete_dancer"),
+    url(r'^requests/confirm/$', views.RequestConfirm.as_view(),
+        name="request_confirm"),
+    url(r'^requests/delete/$', views.RequestDelete.as_view(),
+        name="request_deny"),
+
 ]

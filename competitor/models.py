@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 import time
 
+
 class Studio(models.Model):
     STATE_CHOICES = (
         (0, "AL"),
@@ -298,12 +299,18 @@ class Dancer(models.Model):
 
 
 class Request(models.Model):
-    dancer = models.ForeignKey(Dancer, on_delete=models.CASCADE)
-    studio = models.ForeignKey(Studio, on_delete=models.CASCADE)
+    dancer = models.ForeignKey(Dancer, on_delete=models.CASCADE,
+                               related_name="requested_studio")
+    studio = models.ForeignKey(Studio, on_delete=models.CASCADE,
+                               related_name="dancer_requests")
+
+    def __str__(self):
+        return self.dancer.name + ", " + self.studio.name
 
 
 class StudioRequest(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="studio_request")
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="studio_request")
     STATE_CHOICES = (
         (0, "AL"),
         (1, "AK"),

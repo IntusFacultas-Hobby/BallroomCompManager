@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Create Competition{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-sm-offset-1 col-sm-5">
+        <div class="row">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h2>Create Competition</h2>
+                </div>
+                <div class="panel-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="form-group">
+                            {{ field.label_tag }}
+                            {% render_field field class+="form-control" %}<br>
+                            {% if field.help_text %}
+                            <small class="form-text text-muted" >
+                            {{ field.help_text|safe }}</small>
+                            {% endif %}
+                        </div>
+                        {% if field.errors|length > 0 %}
+                        <div class="form-group">
+                            <ul>
+                                {% for error in field.errors %}
+                                <li style="color: red">{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        <button class="btn btn-primary"type="submit">Create</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

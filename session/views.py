@@ -6,13 +6,13 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.forms import PasswordChangeForm
-from django.http import HttpResponseRedirect
-from django.shortcuts import render, redirect
+from django.http import HttpResponseRedirect, HttpResponse
+from django.shortcuts import render
 from django.views import View
 from session.forms import SignUpForm
 from competitor.forms import (
     AssociationForm, DancerForm, StudioRequestForm, StudioForm)
-from competitor.models import Dancer
+from competitor.models import Dancer, Request
 
 
 def signup(request):
@@ -28,7 +28,7 @@ def signup(request):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=user.username, password=raw_password)
             login(request, user)
-            return redirect('session:index')
+            return HttpResponseRedirect(reverse('session:login'))
     else:
         form = SignUpForm()
     return render(request, 'session/signup.html', {'form': form})
@@ -61,7 +61,6 @@ class ProfileView(LoginRequiredMixin, View):
             data["change_password_form"] = change_password_form
         else:
             data["change_password_form"] = change_password_form
-        print(data)
         return data
 
     def get(self, request):
@@ -85,13 +84,13 @@ class ProfileView(LoginRequiredMixin, View):
                                                dancer=dancer, dancer_form=form)
                     return render(request, 'session/account.html', data)
                 dancer = form.save()
-                data = self.return_context(request=request, user=user,
-                                           dancer=dancer)
-                return render(request, 'session/account.html', data)
+                messages.success(request, "Information updated")
+                return HttpResponseRedirect(reverse("session:account"))
             else:
                 dancer = user.dancer
                 data = self.return_context(request=request, user=user,
                                            dancer=dancer, form=form)
+                messages.error(request, "Please check form and try again.")
                 return render(request, 'session/account.html', data)
         elif request.POST.get("form_type") == 'change_password_form':
             form = PasswordChangeForm(request.user, request.POST)
@@ -102,17 +101,37 @@ class ProfileView(LoginRequiredMixin, View):
                 messages.success(
                     request,
                     "Password updated.")
-                data = self.return_context(request=request, user=user,
-                                           dancer=dancer)
-                return render(request, 'session/account.html', data)
+                return HttpResponseRedirect(reverse('session:account'))
             else:
                 user = request.user
                 dancer = user.dancer
                 data = self.return_context(request=request, user=user,
                                            dancer=dancer,
                                            change_password_form=form)
+                messages.error(request, "Please check form and try again.")
                 return render(request, 'session/account.html', data)
-        # TODO Studio Association
+        elif request.POST.get("form_type") == "association_form":
+            form = AssociationForm(request.user, request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(
+                    request,
+                    "Request sent."
+                )
+                user = request.user
+                dancer = user.dancer
+                return HttpResponseRedirect(reverse('session:account'))
+            else:
+                user = request.user
+                dancer = user.dancer
+                data = self.return_context(request=request, user=user,
+                                           dancer=dancer,
+                                           form=form)
+                messages.error(
+                    request,
+                    "No studio exists with this pin."
+                )
+                return render(request, 'session/account.html', data)
 
 
 class StudioView(LoginRequiredMixin, View):
@@ -126,9 +145,15 @@ class StudioView(LoginRequiredMixin, View):
             })
         else:
             form = StudioForm(instance=user.dancer.owned_studio)
+            dancers = Dancer.objects.filter(studio=user.dancer.owned_studio)
+            requests = Request.objects.filter(studio=user.dancer.owned_studio)
+            competitions = user.dancer.owned_studio.competitions.all()
             return render(request, 'session/studio_management.html', {
                 "form": form,
-                "studio": user.dancer.owned_studio
+                "studio": user.dancer.owned_studio,
+                "dancers": dancers,
+                "requests": requests,
+                "competitions": competitions,
             })
 
     def post(self, request):
@@ -138,9 +163,103 @@ class StudioView(LoginRequiredMixin, View):
             if form.is_valid():
                 studio_request = form.save(commit=False)
                 studio_request.user = request.user
-                print(studio_request)
                 studio_request.save()
                 messages.success(
                     request,
                     "Studio request submitted.")
                 return HttpResponseRedirect(reverse('session:account'))
+            else:
+                messages.error(request, "Please review form and try again.")
+                return render(request, 'session/studio_management.html', {
+                    "form": form,
+                })
+
+
+class DeleteDancer(LoginRequiredMixin, View):
+    def return_default(self, request, user):
+        form = StudioForm(instance=user.dancer.owned_studio)
+        dancers = Dancer.objects.filter(studio=user.dancer.owned_studio)
+        requests = Request.objects.filter(studio=user.dancer.owned_studio)
+        return render(request, 'session/studio_management.html', {
+            "form": form,
+            "studio": user.dancer.owned_studio,
+            "dancers": dancers,
+            "requests": requests
+        })
+
+    def post(self, request):
+        post_data = request.POST.copy()
+        del post_data["csrfmiddlewaretoken"]
+        user = request.user
+        if (user.dancer.owned_studio):
+            for key in post_data:
+                dancer = Dancer.objects.get(pk=key)
+                if (user.dancer.owned_studio == dancer.studio and
+                        post_data[key] == "on"):
+                    dancer.studio = None
+                    dancer.save()
+                else:
+                    messages.error(request, "Cannot delete dancer that does not belong to your studio")
+                    return self.return_default(request, user)
+            messages.success(request, "Dancers removed.")
+            return HttpResponseRedirect(reverse('session:studio'))
+        else:
+            messages.error(
+                request, "Bad request on Dancer Removal. Contact Support")
+            return HttpResponseRedirect(reverse('session:studio'))
+
+
+class RequestConfirm(LoginRequiredMixin, View):
+    def return_default(self, request, user):
+        form = StudioForm(instance=user.dancer.owned_studio)
+        dancers = Dancer.objects.filter(studio=user.dancer.owned_studio)
+        requests = Request.objects.filter(studio=user.dancer.owned_studio)
+        return render(request, 'session/studio_management.html', {
+            "form": form,
+            "studio": user.dancer.owned_studio,
+            "dancers": dancers,
+            "requests": requests
+        })
+
+    def post(self, request):
+        user = request.user
+        data = request.POST.copy()
+        del data["csrfmiddlewaretoken"]
+        if (user.dancer.owned_studio):
+            for key in data:
+                req = Request.objects.get(pk=key)
+                print("Information forthcoming:")
+                print(data[key])
+                if (req.studio == user.dancer.owned_studio and
+                        data[key] == "on"):
+                    req.dancer.studio = req.studio
+                    req.dancer.save()
+                    req.delete()
+                else:
+                    messages.error(request, "Cannot modify requests that do not belong to your studio")
+                    return self.return_default(request, user)
+            messages.success(request, "Requests confirmed.")
+            return HttpResponseRedirect(reverse('session:studio'))
+        else:
+            messages.error(request, "Bad request on Request Confirm. Contact Support.")
+            return HttpResponseRedirect(reverse('session:studio'))
+
+
+class RequestDelete(LoginRequiredMixin, View):
+
+    def post(self, request):
+        user = request.user
+        data = request.POST.copy()
+        del data["csrfmiddlewaretoken"]
+        if (user.dancer.owned_studio):
+            for key in data:
+                request = Request.objects.get(pk=key)
+                if (request.studio == user.dancer.owned_studio and
+                        data[key] == "on"):
+                    request.delete()
+                else:
+                    return HttpResponse("Cannot modify requests that do not belong to your studio",
+                                        status=400)
+            return HttpResponse("Ok", status=200)
+        else:
+            return HttpResponse("Bad request", status=400)

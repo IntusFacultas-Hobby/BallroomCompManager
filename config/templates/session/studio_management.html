@@ -1,123 +1,236 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
-
 {% block title %}Studio Management{% endblock %}
 
 {% block content %}
-    <div class="col-lg-offset-1 col-lg-5">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                Account information
+    <div class="row">
+        <div class="col-lg-offset-1 col-lg-5">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    Studio information
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <label class="control-label col-lg-4">Association Pin:</label>
+                        <div class="col-lg-6">
+                            {{ studio.association_pin }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <small>This is the pin that dancers must enter in order to request association to your studio</small>
+                            <hr>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form class="form-horizontal" style="margin:20px;" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="dancer_form">
+                                {% for field in form %}
+                                <div class="form-group">
+                                    {{ field.label_tag }}
+                                    {% render_field field class+="form-control" %}
+                                    {% if field.help_text %}
+                                    <small class="form-text text-muted" >{{ field.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                                {% if field.errors|length > 0 %}
+                                <div class="form-group">
+                                    <ul>
+                                        {% for error in field.errors %}
+                                        <li style="color: red">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                                <button class="btn btn-primary" type="submit">Update Information</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="panel-body">
-                <div class="row">
-                    <label class="control-label col-lg-2">Association Pin:</label>
-                    <div class="col-lg-10">
-                        {{ studio.association_pin }}
+        </div>
+        <div class="col-lg-5">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-primary">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-sm-8">
+                                        Studio Dancers
+                                    </div>
+                                    <div class="col-sm-4">
+                                        {% if dancers|length > 0 %}
+                                        <button type="submit" onclick="deleteDancers()" class="btn btn-sm btn-danger">Delete Selected</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <form class="form-horizontal" id="dancersForm" action="{% url 'session:delete_dancer' %}" method="post">
+                                {% csrf_token %}
+                                <div class="wrapper" style="height:290px;">
+                                    <table id="dancers" class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>&nbsp;</th>
+                                                <th>Dancer</th>
+                                                <th>Email</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                             {% for dancer in dancers %}
+                                            <tr>
+                                                <td>
+                                                    <input type="checkbox" name="{{dancer.id}}"> 
+                                                </td>
+                                                <td>
+                                                        {{dancer.name}}
+                                                </td>
+                                                <td>
+                                                    {{dancer.email}}
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td></td>
+                                                <td colspan="2">
+                                                    No Dancers yet
+                                                </td>
+                                            </tr>
+                                            {% endfor %}    
+                                        </tbody>
+                                    </table>
+                                </div>
+                                </form>
+                            </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-lg-12">
-                        <small>To change your studio, enter the pin of your studio. Once the studio owner accepts your request, your affiliation will be updated.</small>
-                        <hr>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-lg-12">
-                        <form class="form-horizontal" style="margin:20px;" method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="form_type" value="dancer_form">
-                            {% for field in form %}
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {% render_field field class+="form-control" %}
-                                {% if field.help_text %}
-                                <small class="form-text text-muted" >{{ field.help_text }}</small>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-sm-5">
+                                    Association Requests
+                                </div>
+                                {% if requests|length > 0 %}
+                                <div class="col-sm-7">
+                                    <button onclick="confirmRequests()" class="btn btn-sm btn-default">Confirm Selected</button>
+                                    <button onclick="denyRequests()" class="btn btn-sm btn-danger">Deny Selected</button>
+                                </div>
                                 {% endif %}
                             </div>
-                            {% if field.errors|length > 0 %}
-                            <div class="form-group">
-                                <ul>
-                                    {% for error in field.errors %}
-                                    <li style="color: red">{{ error }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                            <button class="btn btn-primary" type="submit">Update Information</button>
-                        </form>
+                        </div>
+                        <div class="panel-body">
+                            <form class="form-horizontal" id="requestForm" style="margin:20px" method="post">
+                                {% csrf_token %}
+                                <div class="wrapper" style='height:236px'>
+                                    <table id="requests" class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>&nbsp;</th>
+                                                <th>Dancer</th>
+                                                <th>Email</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for assc in requests %}
+                                            <tr>
+                                                <td>
+                                                    <input type="checkbox" name="{{assc.id}}"> 
+                                                </td>
+                                                <td>
+                                                    {{assc.dancer.name}}
+                                                </td>
+                                                <td>
+                                                    {{assc.dancer.email}}
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td>
+                                                    
+                                                </td>
+                                                <td colspan="2">
+                                                    No Requests yet
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>                            
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-5">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        Studio Dancers
-                    </div>
-                    <div class="panel-body">
-                        <form class="form-horizontal" style="margin:20px;" method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="form_type" value="association_form">
-                            {% for field in form %}
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {% render_field field class+="form-control" %}
-                                {% if field.help_text %}
-                                <small class="form-text text-muted" >{{ field.help_text }}</small>
-                                {% endif %}
-                            </div>
-                            {% if field.errors|length > 0 %}
-                            <div class="form-group">
-                                <ul>
-                                    {% for error in field.errors %}
-                                    <li style="color: red">{{ error }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                            <button class="btn btn-primary" type="submit">Submit</button>
-                        </form>
+    <div class="row">
+        <div class="col-lg-offset-1 col-lg-10">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-lg-9">
+                            Competitions hosted by your studio
+                        </div>
+                        <div class="col-lg-3">
+                            <a href="{% url 'competition:create' %}" class="btn btn-sm btn-default">Create New Competition</a>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        Change Password
-                    </div>
-                    <div class="panel-body">
-                        <form class="form-horizontal" style="margin:20px" method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="form_type" value="change_password_form">
-                            {% for field in change_password_form %}
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {% render_field field class+="form-control" %}
-                                {% if field.help_text %}
-                                <small class="form-text text-muted">{{ field.help_text|safe }}
-                                </small>
-                                {% endif %}
-                            </div>
-                            {% if field.errors|length > 0 %}
-                            <div class="form-group">
-                                <ul>
-                                    {% for error in field.errors %}
-                                    <li style="color: red">{{ error }}</li>
+                <div class="panel-body">
+                    <div class="wrapper">
+                        <table id="eventsList" class="table table-striped table-hover">
+                            <thead>
+                                <thead>
+                                    <tr>
+                                        <th>Competition Name</th>
+                                        <th>Competition Date</th>
+                                        <th>Last Day to Register</th>
+                                        <th>&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for comp in competitions %}
+                                        <tr>
+                                            <td>
+                                                {{ comp.name }}
+                                            </td>
+                                            <td>
+                                                {{ comp.date_of_start }}
+                                            </td>
+                                            <td>
+                                                {{ comp.end_date_of_registration}}
+                                            </td>
+                                            <td>
+                                                {% if comp.completed %}
+                                                    <button class="btn btn-primary">
+                                                        View TODO
+                                                    </button>
+                                                {% else %}
+                                                    <a class="btn btn-primary">
+                                                        Manage TODO
+                                                    </a>
+                                                    <a href="{% url 'competition:edit' competition=comp.id %}" class="btn btn-info">
+                                                        Edit
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" style="text-align:center">
+                                                No competitions yet
+                                            </td>
+                                        </tr>
                                     {% endfor %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                            <button class="btn btn-primary" type="submit">Change Password</button>
-                        </form>
+                                </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -130,16 +243,40 @@
 {{ form.media.js }}
 <script type="text/javascript">
     $(function() {
-         $('.form-group').each(function() {
-                var formGroup = $(this),
-                    formgroupWidth = formGroup.outerWidth();
-                
-                formGroup.find('.select2-container').css('width', formgroupWidth);
-                
-            });
-            $(".select2-search__field").attr('style', "");    
+        $("#dancers").floatThead({
+            scrollContainer: function($table){
+                return $table.closest('.wrapper');
+            }
+        });
+        $('.form-group').each(function() {
+            var formGroup = $(this),
+                formgroupWidth = formGroup.outerWidth();
+            
+            formGroup.find('.select2-container').css('width', formgroupWidth);
+            
+        });
+        $(".select2-search__field").attr('style', "");    
     })
+    function deleteDancers() {
+        $("#loader").removeClass("toggled")
+        $('#dancersForm').submit();
+    }
+    function confirmRequests() {
+        $("#loader").removeClass("toggled");
+        var url = "{% url 'session:request_confirm' %}"
+        $('#requestForm').attr('action', url).submit();
+    }
+    function denyRequests() {
+        $("#loader").removeClass("toggled");
+        $('#dancersForm').submit();
+    }
     $(window).on('resize', function() {
+        var $table = $('#eventsList');
+        $table.floatThead({
+            scrollContainer: function($table){
+                return $table.closest('.wrapper');
+            }
+        });
         $('.form-group').each(function() {
             var formGroup = $(this),
                 formgroupWidth = formGroup.outerWidth();
