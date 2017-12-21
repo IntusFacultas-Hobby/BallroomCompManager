@@ -288,11 +288,22 @@ class Dancer(models.Model):
     owned_studio = models.OneToOneField(Studio, on_delete=models.CASCADE,
                                         related_name="owner", blank=True,
                                         null=True)
+    judging_pin = models.IntegerField("Judging Pin", unique=True)
     profile = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name='dancer'
     )
+
+    def as_dict(self):
+        return {
+            "judging_pin": '"' + str(self.judging_pin) + '"',
+            "name": '"' + self.name + '"',
+        }
+
+    def save(self, *args, **kwargs):
+        self.judging_pin = int(time.time())
+        super(Dancer, self).save()
 
     def __str__(self):
         return self.name

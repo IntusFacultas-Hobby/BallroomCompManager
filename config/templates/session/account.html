@@ -7,58 +7,101 @@
 
 <div class="row">
     <div class="col-lg-offset-1 col-lg-5">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                Account information
-            </div>
-            <div class="panel-body">
-                <div class="row">
-                    <label class="control-label col-lg-2">Username:</label>
-                    <div class="col-lg-10">
-                        {{ user.username }}
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        Account information
                     </div>
-                </div>
-                <div class="row">
-                    <label class="control-label col-lg-2">Studio:</label>
-                    <div class="col-lg-10">
-                        {{ dancer.studio|default_if_none:"Unaffiliated" }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-lg-12">
-                        <small>To change your studio, enter the pin of your studio. Once the studio owner accepts your request, your affiliation will be updated.</small>
+                    <div class="panel-body">
+                        <table class='table'>
+                            <tbody>
+                                <tr>
+                                    <td>Username:</td><td>{{ user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Studio:</td><td> {{ dancer.studio|default_if_none:"Unaffiliated" }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <small>To change your studio, enter the pin of your studio. Once the studio owner accepts your request, your affiliation will be updated.</small>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Judging Pin:</td><td>{{ dancer.judging_pin }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2"><small>Your judging pin will be used by studios to register you as a judge</small></td>
+                                </tr>
+                            </tbody>
+                        </table>
                         <hr>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-lg-12">
-                        <form class="form-horizontal" style="margin:20px;" method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="form_type" value="dancer_form">
-                            {% for field in dancer_form %}
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {% render_field field class+="form-control" %}
-                                {% if field.help_text %}
-                                <small class="form-text text-muted" >{{ field.help_text }}</small>
-                                {% endif %}
-                            </div>
-                            {% if field.errors|length > 0 %}
-                            <div class="form-group">
-                                <ul>
-                                    {% for error in field.errors %}
-                                    <li style="color: red">{{ error }}</li>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <form class="form-horizontal" style="margin:20px;" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="dancer_form">
+                                    {% for field in dancer_form %}
+                                    <div class="form-group">
+                                        {{ field.label_tag }}
+                                        {% render_field field class+="form-control" %}
+                                        {% if field.help_text %}
+                                        <small class="form-text text-muted" >{{ field.help_text }}</small>
+                                        {% endif %}
+                                    </div>
+                                    {% if field.errors|length > 0 %}
+                                    <div class="form-group">
+                                        <ul>
+                                            {% for error in field.errors %}
+                                            <li style="color: red">{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
                                     {% endfor %}
-                                </ul>
+                                    <button class="btn btn-primary" type="submit">Update Information</button>
+                                </form>
                             </div>
-                            {% endif %}
-                            {% endfor %}
-                            <button class="btn btn-primary" type="submit">Update Information</button>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        {% if roles %}
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        Staff Roles in Recent and Upcoming Competition
+                    </div>
+                    <div class="panel-body">
+                         <div class='wrapper' style="height: 200px">
+                            <table id="roles" class="table table-hover table-striped">
+                                <thead>
+                                    <tr style="background-color:white;">
+                                        <th>Competition</th>
+                                        <th>Date</th>
+                                        <th>Role</th>
+                                        <th>&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for role in roles %}
+                                        <tr>
+                                            <td>{{role.competition.name}}</td>
+                                            <td>{{role.competition.date_of_start}}</td>
+                                            <td>{% if role.role == 0 %} Logistics/Deck Captain {% else %} Judge {% endif %}</td>
+                                            <td><a href="" class="btn btn-sm btn-primary">Go To Comp TODO</a></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}   
     </div>
     <div class="col-lg-5">
         <div class="row">
@@ -132,6 +175,14 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-
+{% block js %}
+<script type="text/javascript">
+    $("#roles").floatThead({
+        scrollContainer: function($table){
+            return $table.closest('.wrapper');
+        }
+    });
+</script>
 {% endblock %}

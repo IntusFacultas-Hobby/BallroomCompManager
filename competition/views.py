@@ -1,13 +1,14 @@
 import datetime
+import json
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
-from django.views.generic.list import ListView
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.core.urlresolvers import reverse
-from competition.models import Competition
+from competition.models import Competition, Staff
 from competition.forms import CompetitionForm, EventFormSet
+from competitor.models import Dancer
 
 
 class CompetitionCreateView(LoginRequiredMixin, View):
@@ -18,8 +19,11 @@ class CompetitionCreateView(LoginRequiredMixin, View):
             return HttpResponseRedirect(reverse("session:studio"))
         else:
             form = CompetitionForm()
+            dancers = Dancer.objects.all()
+            dictionaries = [obj.as_dict() for obj in dancers]
             return render(request, 'competition/competition_create.html', {
                 "form": form,
+                "users": dictionaries
             })
 
     def post(self, request):
@@ -33,6 +37,19 @@ class CompetitionCreateView(LoginRequiredMixin, View):
                 competition = form.save(commit=False)
                 competition.host = request.user.dancer.owned_studio
                 competition.save()
+                data = request.POST.get("staff")
+                data = json.loads(data)
+                for entry in data:
+                    person = entry["person"]
+                    role = int(entry["role"])
+                    dancer = Dancer.objects.get(
+                        judging_pin=person["judging_pin"])
+                    role = Staff.ROLE_CHOICES[role]
+                    Staff.objects.create(
+                        competition=competition,
+                        dancer=dancer,
+                        role=role[0]
+                    )
                 messages.success(
                     request, "Competition created. Please add events now.")
                 return HttpResponseRedirect(
@@ -95,14 +112,18 @@ class CompetitionEditView(LoginRequiredMixin, View):
             )
             return HttpResponseRedirect(reverse("session:studio"))
         else:
-            events = comp.events.all().values()
-            print(events)
             formset = EventFormSet(instance=comp)
             form = CompetitionForm(instance=comp)
+            dancers = Dancer.objects.exclude(roles__competition=comp)
+            dictionaries = [obj.as_dict() for obj in dancers]
+            staff = Staff.objects.filter(competition=comp)
+            staff_dictionaries = [obj.as_dict() for obj in staff]
             return render(request, 'competition/competition_edit.html', {
                 "formset": formset,
                 "form": form,
-                "competition": comp
+                "competition": comp,
+                "users": dictionaries,
+                "staff": staff_dictionaries
             })
 
     def post(self, request, competition):
@@ -116,7 +137,6 @@ class CompetitionEditView(LoginRequiredMixin, View):
             return HttpResponseRedirect(reverse("session:studio"))
         events = comp.events
         if request.POST.get("form_type") == 'competition':
-            print("competition")
             form = CompetitionForm(request.POST, instance=comp)
             if form.is_valid():
                 saved_comp = form.save(commit=False)
@@ -135,6 +155,24 @@ class CompetitionEditView(LoginRequiredMixin, View):
                     "form": form,
                     "competition": comp
                 })
+        elif request.POST.get("form_type") == 'staff':
+            data = request.POST.get("staff")
+            data = json.loads(data)
+            Staff.objects.filter(competition=comp).delete()
+            for entry in data:
+                person = entry["person"]
+                role = int(entry["role"])
+                dancer = Dancer.objects.get(judging_pin=person["judging_pin"])
+                role = Staff.ROLE_CHOICES[role]
+                Staff.objects.create(
+                    competition=comp,
+                    dancer=dancer,
+                    role=role[0]
+                )
+            messages.success(request, "Staff successfully added.")
+            return HttpResponseRedirect(
+                reverse("competition:edit",
+                        kwargs={'competition': comp.pk}))
         else:
             formset = EventFormSet(request.POST, instance=comp)
             if formset.is_valid() is False:

@@ -9,7 +9,7 @@ class CompetitionForm(forms.ModelForm):
         fields = ['name', 'date_of_start', 'end_date_of_registration']
         widgets = {
             'date_of_start': DateTimePicker(
-                options={"format": "YYYY-MM-DD", }),
+                options={"format": "YYYY-MM-DD"}),
             'end_date_of_registration': DateTimePicker(
                 options={"format": "YYYY-MM-DD", }),
         }

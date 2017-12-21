@@ -1,3 +1,4 @@
+import datetime
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
@@ -46,6 +47,9 @@ class ProfileView(LoginRequiredMixin, View):
         }
         data["user"] = user
         data["dancer"] = dancer
+        cutoff = datetime.date.today() - datetime.timedelta(days=30)
+        roles = dancer.roles.filter(competition__date_of_start__gte=cutoff)
+        data['roles'] = roles
         if (dancer_form is None):
             dancer_form = DancerForm(instance=dancer)
             data["dancer_form"] = dancer_form

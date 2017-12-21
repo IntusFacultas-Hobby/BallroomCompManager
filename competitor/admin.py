@@ -30,7 +30,17 @@ class StudioRequestAdmin(admin.ModelAdmin):
     actions = [approve]
 
 
-admin.site.register(Studio)
+class RequestInline(admin.TabularInline):
+    model = Request
+
+
+class StudioAdmin(admin.ModelAdmin):
+    model = Studio
+    inlines = [
+        RequestInline
+    ]
+
+
+admin.site.register(Studio, StudioAdmin)
 admin.site.register(Dancer)
 admin.site.register(StudioRequest, StudioRequestAdmin)
-admin.site.register(Request)

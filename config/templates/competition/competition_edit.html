@@ -2,7 +2,6 @@
 {% load widget_tweaks %}
 
 {% block title %}Edit Competition{% endblock %}
-
 {% block content %}
 <div class="row">
         <div class="col-lg-offset-1 col-lg-10">
@@ -12,7 +11,86 @@
         </div>
     </div>
 <div class="row">
-    <div class="col-sm-3">
+    <div class="col-lg-offset-1 col-lg-10">
+        <div id="staffZone" data-js-vars="{{ users }}" staff-js-vars="{{ staff }}" class="panel panel-primary">
+            <div class="panel-heading">
+                <h2>Add Staff</h2>
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <label class="control-label col-sm-3">Search for a Person</label>
+                    <div class="col-sm-7">
+                        <input type="text" class="form-control" v-model="text">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <h3>Matching Queries</h3>
+                        <div class='wrapper' style="height: 200px">
+                            <table id="results" class="table table-hover table-striped">
+                                <thead>
+                                    <tr style="background-color:white;">
+                                        <th>Person</th>
+                                        <th>Role</th>
+                                        <th>&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="person in people">
+                                        <td>((person.name))</td>
+                                        <td>
+                                            <select v-bind:id="((person.judging_pin))" class="form-control staff_option">
+                                                <option value="0">Logistic / Deck Captain</option>
+                                                <option value="1">Judge</option>
+                                            </select>
+                                        </td>
+                                        <td><button class="btn btn-primary btn-sm" v-on:click="addPerson(person.judging_pin, $event)">Add</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <h3>Selected Staff</h3>
+                        <div class='wrapper' style="height: 200px">
+                            <table id="chosen" class="table table-hover table-striped">
+                                <thead>
+                                    <tr style="background-color:white;">
+                                        <th>Person</th>
+                                        <th>Role</th>
+                                        <th>&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="entry in selected">
+                                        <td>((entry.person.name))</td>
+                                        <td>
+                                           <span v-if="entry.role == 0">Logistic / Deck Captain</span>
+                                           <span v-else>Judge</span>
+                                        </td>
+                                        <td><button class="btn btn-danger btn-sm" v-on:click="removePerson(entry.person.judging_pin)"><i class="fa fa-times" aria-hidden="true"></i></button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form method="post" id="staff_form" style="margin-left: 15px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="staff">
+                                <input type="hidden" id="staff_values" name="staff" value="">
+                                <button type="button" onclick="handleSubmission(event)" class="btn btn-primary">Submit Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-offset-1 col-sm-10">
         <div class="panel panel-primary">
             <div class="panel-heading">
                 <h2>Edit {{competition.name}}</h2>
@@ -22,6 +100,7 @@
                     {% csrf_token %}
                     {% for field in form %}
                     <input type="hidden" name="form_type" value="competition">
+                    <input type="hidden" name="staff" value="">
                     <div class="form-group">
                         {{ field.label_tag }}
                         {% render_field field class+="form-control" %}<br>
@@ -40,12 +119,14 @@
                     </div>
                     {% endif %}
                     {% endfor %}
-                    <button class="btn btn-primary"type="submit">Submit Changes</button>
+                    <button class="btn btn-primary" type="submit">Submit Changes</button>
                 </form>
             </div>
         </div>
     </div>
-    <div class="col-sm-9">
+</div>
+<div class="row">
+    <div class="col-sm-offset-1 col-sm-10">
         <div class="panel panel-primary">
             <div class="panel-heading">
                 <h2>Modify {{ competition.name }}'s Events</h2>
@@ -75,6 +156,7 @@
                                             {{ hidden }}
                                         {% endfor %}
                                     {% endif %}
+                                    {% render_field field class+="form-control" %}
                                     {% if field.errors|length > 0 %}
                                     <div class="form-group">
                                         <ul>
@@ -84,7 +166,6 @@
                                         </ul>
                                     </div>
                                     {% endif %}
-                                    {% render_field field class+="form-control" %}
                                 </td>
                             {% endfor %}
                         </tr>
@@ -100,6 +181,9 @@
 
 {% block js %}
 <script type="text/javascript">
+        var app;
+        var store;
+        var handleSubmission;
         $('.formset_row').formset({
             addText: 'Add Event',
             deleteText: 'Remove',
@@ -130,5 +214,129 @@
                 $(".bootstrap-datetimepicker-widget").css(
                 "background-color", "#ffffff");
         });
+        $(function() {
+        $(function() {
+            handleSubmission = function(e) {
+                e.preventDefault();
+                $("#staff_values").val(JSON.stringify(app.selected))
+                $("#staff_form").submit();
+            }
+            $("#results").floatThead({
+                scrollContainer: function($table){
+                    return $table.closest('.wrapper');
+                }
+            });
+            $("#chosen").floatThead({
+                scrollContainer: function($table){
+                    return $table.closest('.wrapper');
+                }
+            });
+            Vue.use(Vuex)
+            store = new Vuex.Store({
+                state: {
+                    users: [],
+                    staff: [],
+                    saved_users: [],
+                },
+                mutations: {
+                    users (state, data) {
+                        state.users = data;
+                    },
+                    staff (state, data) {
+                        state.staff = data;
+                    },
+                    saved (state, data) {
+                        state.saved_users = data;
+                    }
+                },
+                actions: {
+                    reorder (context) {
+                        var sorted = context.state.users;
+                        sorted.sort(function(a,b) {
+                            if (a.name < b.name) return 1;
+                            else if (a.name > b.name) return -1;
+                            return 0;
+                        })
+                        context.commit("users", sorted);
+                    }
+                },
+            });
+            app = new Vue({
+                el: "#staffZone",
+                store: store,
+                delimiters: ["((","))"],
+                data: {
+                    text: "",
+                    selected: [],
+                },
+                mounted: function() {
+                    var data =  $("#staffZone").attr("data-js-vars")
+                    var staff = $("#staffZone").attr("staff-js-vars")
+                    data = data.substring(1, data.length - 1);
+                    var split = data.split("\'").join("\"").split("\"\"").join("\"");
+                    split = '[' + split + ']';
+                    split = JSON.parse(split)
+                    store.commit("users", split);
+                    store.commit("saved", split);
+                    store.dispatch("reorder");
+                    staff = staff.substring(1, staff.length - 1);
+                    var split = staff.split("\'").join("\"").split("\"\"").join("\"");
+                    split = '[' + split + ']';
+                    split = JSON.parse(split) 
+                    this.selected = split;
+                },
+                computed: {
+                    users: function() {
+                        return store.state.users;
+                    },
+                    staff: function() {
+                        return store.state.staff;
+                    },
+                    people: function() {
+                        if (this.text != "") {
+                            var search = this.text
+                            var data = store.state.users;
+                            var filtered = data.filter(function(user) {
+                                return user.name.indexOf(search) > -1
+                            })
+                            return filtered;
+                        }
+                        else {
+                            return []
+                        }
+                    }
+                },
+                methods: {
+                    addPerson: function(id, $event) {
+                        var location;
+                        var filtered = store.state.users.filter(function(user, index) {
+                            if (user.judging_pin == id) {
+                                location = index;
+                            }
+                            return user.judging_pin == id;
+                        })
+                        var array = store.state.users;
+                        array.splice(location, 1)
+                        store.commit("users", array)
+                        var user = filtered[0];
+                        var value = $("#" + user.judging_pin).val()
+                        app.selected.push({person:user, role:value});   
+                    },
+                    removePerson: function(id) {
+                        var location= app.selected.findIndex(function(entry) {
+                            return entry.person.judging_pin == id;
+                        })
+                        var removed = app.selected.splice(location, 1);
+                        removed = removed[0];
+                        var array = store.state.users;
+                        array.push(removed.person);
+                        store.commit("users", array);
+                        store.dispatch("reorder");
+
+                    }
+                }
+            })
+        })
+    })
 </script>
 {% endblock %}

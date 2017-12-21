@@ -4,19 +4,47 @@
   pointer-events: none;
   cursor: pointer;
 }
-
+.prev {
+  color:white;
+}
+.picker-switch {
+  color:white;
+}
+.next {
+  color:white;
+}
 .table-fixed thead {
   width: 97%;
 }
 .timepicker-hours {
   color:white !important;
 }
+.old {
+  color: #333333 !important;
+}
+.day {
+  color:white;
+}
+.new {
+  color: #333333 !important; 
+}
+/*.datepicker-days {
+  color:white;
+}*/
+.bootstrap-datetimepicker-widget table td.old, .bootstrap-datetimepicker-widget table td.new {
+  color:white;
+  background-color: #1C1C1C;
+}
 .bootstrap-datetimepicker-widget table td span {
     color: white;
+    background-color: #1C1C1C;
 }
 .bootstrap-datetimepicker-widget table td span:hover {
     background: #eeeeee;
     color:black;
+}
+.bootstrap-datetimepicker-widget table td.day:hover, .bootstrap-datetimepicker-widget table td.hour:hover, .bootstrap-datetimepicker-widget table td.minute:hover, .bootstrap-datetimepicker-widget table td.second {
+  color:white;
 }
 .bootstrap-datetimepicker-widget table td.day:hover, .bootstrap-datetimepicker-widget table td.hour:hover, .bootstrap-datetimepicker-widget table td.minute:hover, .bootstrap-datetimepicker-widget table td.second:hover {
     color:black;
