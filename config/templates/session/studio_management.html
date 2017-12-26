@@ -213,8 +213,8 @@
                                                         View TODO
                                                     </button>
                                                 {% else %}
-                                                    <a class="btn btn-primary">
-                                                        Manage TODO
+                                                    <a class="btn btn-primary" href="{% url 'competition:manage' competition=comp.id %}">
+                                                        Manage
                                                     </a>
                                                     <a href="{% url 'competition:edit' competition=comp.id %}" class="btn btn-info">
                                                         Edit

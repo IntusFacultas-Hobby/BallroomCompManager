@@ -1,3 +1,12 @@
+.custom-select2 {
+  color:red !important;
+  background-color:blue;
+} 
+
+.list-complete-enter, .list-complete-leave-active {
+  opacity: 0;
+}
+
 .btn-disabled,
 .btn-disabled[disabled] {
   opacity: .4;

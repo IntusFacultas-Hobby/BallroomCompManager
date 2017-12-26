@@ -28,7 +28,7 @@ def signup(request):
             dancer.save()
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=user.username, password=raw_password)
-            login(request, user)
+            # login(request, user)
             return HttpResponseRedirect(reverse('session:login'))
     else:
         form = SignUpForm()

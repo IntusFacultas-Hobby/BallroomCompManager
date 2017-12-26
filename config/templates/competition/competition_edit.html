@@ -4,12 +4,12 @@
 {% block title %}Edit Competition{% endblock %}
 {% block content %}
 <div class="row">
-        <div class="col-lg-offset-1 col-lg-10">
-            <div class="alert alert-dismissible alert-info">
-                <strong>Warning!</strong> It is strongly recommended not to use this page to modify a currently running or completed competition. <strong>Modifying information here can erase entries and results</strong>. If you are trying to modify a competition in progress, use the manage option on the previous screen.
-            </div>
+    <div class="col-lg-offset-1 col-lg-10">
+        <div class="alert alert-dismissible alert-info">
+            <strong>Warning!</strong> It is strongly recommended not to use this page to modify a currently running or completed competition. <strong>Modifying information here can erase entries and results</strong>. If you are trying to modify a competition in progress, use the manage option on the previous screen.
         </div>
     </div>
+</div>
 <div class="row">
     <div class="col-lg-offset-1 col-lg-10">
         <div id="staffZone" data-js-vars="{{ users }}" staff-js-vars="{{ staff }}" class="panel panel-primary">
@@ -26,11 +26,12 @@
                 <div class="row">
                     <div class="col-lg-6">
                         <h3>Matching Queries</h3>
-                        <div class='wrapper' style="height: 200px">
+                        <div class='wrapper' style=" overflow-x:hidden; height: 200px">
                             <table id="results" class="table table-hover table-striped">
                                 <thead>
                                     <tr style="background-color:white;">
                                         <th>Person</th>
+                                        <th>Pin</th>
                                         <th>Role</th>
                                         <th>&nbsp;</th>
                                     </tr>
@@ -38,6 +39,7 @@
                                 <tbody>
                                     <tr v-for="person in people">
                                         <td>((person.name))</td>
+                                        <td>((person.judging_pin))</td>
                                         <td>
                                             <select v-bind:id="((person.judging_pin))" class="form-control staff_option">
                                                 <option value="0">Logistic / Deck Captain</option>
@@ -52,7 +54,7 @@
                     </div>
                     <div class="col-lg-6">
                         <h3>Selected Staff</h3>
-                        <div class='wrapper' style="height: 200px">
+                        <div class='wrapper' style=" overflow-x:hidden; height: 200px">
                             <table id="chosen" class="table table-hover table-striped">
                                 <thead>
                                     <tr style="background-color:white;">
@@ -206,6 +208,14 @@
                 $(formElements[0][4]).next().click(function(event) {
                     $(formElements[0][4]).data("DateTimePicker").show();
                 })
+            },
+            removed: function(row) {
+                $(row).find('input').each(function() {
+                    // $(this).remove()
+                    console.log($(this).val())
+                    // $(this).val("")
+                    // console.log($(this).val())
+                })
             }
         });
         $('.datepicker').on(
@@ -214,7 +224,6 @@
                 $(".bootstrap-datetimepicker-widget").css(
                 "background-color", "#ffffff");
         });
-        $(function() {
         $(function() {
             handleSubmission = function(e) {
                 e.preventDefault();
@@ -337,6 +346,5 @@
                 }
             })
         })
-    })
 </script>
 {% endblock %}

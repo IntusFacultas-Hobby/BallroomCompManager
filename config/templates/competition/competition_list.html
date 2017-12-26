@@ -30,7 +30,7 @@
                                     {{ comp.end_date_of_registration}}
                                 </td>
                                 <td>
-                                    <a href="" class="btn btn-sm btn-primary {% if comp.past_registration %} btn-disabled {% endif %}"  {% if comp.past_registration %} disabled="disabled" {% endif %}>Register TODO</a>
+                                    <a href="{% url 'competition:signup' competition=comp.id %}" class="btn btn-sm btn-primary {% if comp.past_registration %} btn-disabled {% endif %}"  {% if comp.past_registration %} disabled="disabled" {% endif %}>Register</a>
                                 </td>
                             </tr>
                         {% empty %}

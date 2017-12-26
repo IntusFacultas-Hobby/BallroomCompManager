@@ -32,4 +32,4 @@ class EventForm(forms.ModelForm):
 
 
 EventFormSet = forms.inlineformset_factory(
-    Competition, Event, form=EventForm, extra=1)
+    Competition, Event, extra=0, form=EventForm, can_delete=True)

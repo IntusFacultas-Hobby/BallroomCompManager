@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% block title %}Signup{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-offset-1 col-lg-10">
+        <div class="alert alert-dismissible alert-info">
+            <strong>Heads up!</strong> Resubmitting this form will overwrite your previous submission. Double check with your partner so that you don't double submit!
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-offset-1 col-lg-10">
+         <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3>{{competition.name}} Signup Form</h3>
+                </div>
+                <div id="eventZone" events-js-vars="{{events}}" class="panel-body" style="padding:25px;">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form id="form" class="form-horizontal" method="post">
+                                {% csrf_token %}
+                                <div class="form-group row">
+                                    <h4>Personal Information</h4>
+                                    <hr>
+                                    <div class="row">
+                                        <span class="control-label col-lg-1">Name</span>
+                                        <div class="col-lg-4">
+                                            <input class="form-control" type="text" name="name" value="{{request.user.dancer.name}}" disabled >
+                                        </div>
+                                        <span class="control-label col-lg-1">Email</span>
+                                        <div class="col-lg-4">
+                                            <input class="form-control" type="text" name="email" value="{{request.user.dancer.email}}" disabled >
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <span class="control-label col-lg-1">Studio</span>
+                                        <div class="col-lg-4">
+                                            <input class="form-control" type="text" name="studio" value="{{request.user.dancer.studio.name}}" disabled >
+                                        </div>
+                                        <span class="control-label col-lg-2">Studio Information</span>
+                                        <div class="col-lg-4">
+                                            <div class="row">
+                                                <div class="col-lg-12">
+                                                    <strong>Address:</strong> {% if studio.address and studio.city and studio.state and studio.zip_code %} {{studio.address}}, {{studio.city}}, {{studio.state}}, {{studio.zip_code}} {% else %} {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-lg-12">
+                                                    <strong>Country:</strong> {{studio.country}}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <h4>Partnership(s) Information</h4>
+                                    <hr>
+                                    <div class="row">
+                                        <span class="control-label col-lg-1">Lead</span>
+                                        <div class="col-lg-11">
+                                            <select id="lead" class="js-data-example-ajax" style="width: 100%">
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <span class="control-label col-lg-1">Follow</span>
+                                        <div class="col-lg-11">
+                                            <select id="follow" class="js-data-example-ajax">
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-lg-offset-1 col-lg-11">
+                                            <small><strong>Quick Tip! </strong>Select the lead and follow for an event, then add the events below. If you have multiple roles or multiple partners, change the roles above as needed and add another event. It will not affect your already added events.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <h4>Event(s) Information</h4>
+                                    <hr>
+                                    <small><strong>Quick Tip! </strong>Select Events from the left-hand side. All events you have added will appear on the right. You need to have selected a lead and follow above.</small>
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <div class='wrapper' style="height: 200px">
+                                                <table id="events" class="table table-hover table-striped">
+                                                    <thead>
+                                                        <tr style="background-color:white;">
+                                                            <th>Skill Group</th>
+                                                            <th>Event</th>
+                                                            <th><input type="text" v-on:keyup="eventFilter" v-model="eventsSearch"></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="event in display_events">
+                                                            <td>((event.skill_group))</td>
+                                                            <td>((event.name))</td>
+                                                            <td><button :disabled="!canAdd" type="button" class="btn btn-primary btn-sm" v-on:click="addEvent(event.id)">Add Event</button></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class='wrapper' style="height: 200px">
+                                                <table id="events_added" class="table table-hover table-striped">
+                                                <input type="hidden" id="selected_events" name="events">
+                                                    <thead>
+                                                        <tr style="background-color:white;">
+                                                            <th>Skill Group</th>
+                                                            <th>Event</th>
+                                                            <th>Dancers</th>
+                                                            <th>&nbsp;</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="event in selected">
+                                                            <input type="hidden" v-bind:name="event.id">
+                                                            <td>((event.skill_group))</td>
+                                                            <td>((event.name))</td>
+                                                            <td>((event.partners))</td>
+                                                            <td><button type="button" class="btn btn-danger btn-sm" v-on:click="removeEvent(event.id)"><i class="fa fa-times" aria-hidden="true"></i></button></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <h4>Payment Zone and Ticket Purchase TODO</h4>
+                                    <hr>
+
+                                </div>
+                                <div class="form-gorup row">
+                                    <button type="button" v-on:click="subForm($event)" class="btn btn-primary">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    var store;
+    var eventApp;
+     $(function() {
+        $('.form-group').each(function() {
+            var formGroup = $(this),
+                formgroupWidth = formGroup.outerWidth();
+            formGroup.find('.select2-container').css('width', formgroupWidth);
+        });
+        var ajax_data;
+        $.get("{% url 'competition:ajax-dancers' %}", function(data){
+            data = data.dancers;
+            var array = [];
+            for (var x = 0; x < data.length; x++) {
+                array.push({
+                    name: data[x].name.substring(1, data[x].name.length - 1),
+                    judging_pin: parseInt(data[x].judging_pin.substring(1, data[x].judging_pin.length - 1))
+                })
+            }
+            data = array;
+            console.log(data)
+            store.commit("dancers", data);
+            var select2Data = [];
+            for (var x = 0; x < data.length; x++) {
+                select2Data.push({
+                    id: data[x].judging_pin,
+                    text: data[x].name + ", " + data[x].judging_pin
+                })
+            }
+            $(".js-data-example-ajax").select2({
+                data: select2Data,
+                placeholder: 'Search for a dancer.',
+                minimumInputLength: 3,
+                formatLoadMore: 'Loading more...',
+            }); 
+            $("#lead").next(".select2").find(".select2-selection").focus(function() {
+                $("#lead").select2("open");
+            });
+            $("#follow").next(".select2").find(".select2-selection").focus(function() {
+                $("#follow").select2("open");
+            });
+            $("#lead").on("select2:selecting", function(e) { 
+               eventApp.lead = true;
+            });
+            $("#follow").on("select2:selecting", function(e) { 
+               eventApp.follow = true;
+            });
+            $('.form-group').each(function() {
+                var formGroup = $(this),
+                    formgroupWidth = formGroup.outerWidth();
+                formgroupWidth = formgroupWidth * .9;
+                formGroup.find('.select2-container').css('width', formgroupWidth);
+                
+            });
+            $(".select2-search__field").attr('style', "");      
+        });
+        $("#events").floatThead({
+            scrollContainer: function($table){
+                return $table.closest('.wrapper');
+            }
+        });
+        $("#events_added").floatThead({
+            scrollContainer: function($table){
+                return $table.closest('.wrapper');
+            }
+        });
+        Vue.use(Vuex)
+        store = new Vuex.Store({
+            state: {
+                events: [],
+                selected: [],
+                dancers: [],
+            },
+            mutations: {
+                events (state, data) {
+                    state.events = data;
+                },
+                dancers (state, data) {
+                    state.dancers = data;
+                }
+            },
+            actions: {
+            },
+        });
+        eventApp = new Vue({
+            el: "#eventZone",
+            store: store,
+            delimiters: ["((","))"],
+            data: {
+                display_events: [],
+                selected: [],
+                eventsSearch: "",
+                lead: false,
+                follow: false,
+            },
+            mounted: function() {
+                var eventsList = $("#eventZone").attr("events-js-vars")
+                store.commit("events", processJS(eventsList));
+                this.display_events = processJS(eventsList);
+            },
+            computed: {
+                events: function() {
+                    return store.state.events;
+                },
+                canAdd: function() {
+                    return this.lead && this.follow
+                }
+            },
+            methods: {
+                addEvent: function(id) {
+                    var location = eventApp.display_events.findIndex(function(event) {
+                        return event.id == id;
+                    })
+                    var array = eventApp.display_events;
+                    var filtered = array.splice(location, 1)
+                    eventApp.display_events = array;
+                    var event = filtered[0];
+                    lead = store.state.dancers.filter(function(dancer) {
+                        return parseInt(dancer.judging_pin) == parseInt($("#lead").val())
+                    })
+                    follow = store.state.dancers.filter(function(dancer) {
+                        return parseInt(dancer.judging_pin) == parseInt($("#follow").val())
+                    })
+                    lead = lead[0];
+                    follow = follow[0];
+                    event.partners = lead.name + " and "  + follow.name;
+                    event.couple = [lead, follow]
+                    eventApp.selected.push(event);   
+                },
+                removeEvent: function(id) {
+                    var location= eventApp.selected.findIndex(function(event) {
+                        return event.id == id;
+                    })
+                    var removed = eventApp.selected.splice(location, 1);
+                    removed = removed[0];
+                    eventApp.display_events.push(removed)
+                },
+                eventFilter: function() {
+                    var text = eventApp.eventsSearch;
+                    if (text == "") {
+                        eventApp.display_events = store.state.events;
+                    }
+                    else {
+                        eventApp.display_events = store.state.events;
+                        eventApp.display_events = eventApp.display_events.filter(function(event) {
+                            var filterTerm = event.skill_group + " " + event.name
+                            return filterTerm.toUpperCase().indexOf(text.toUpperCase()) > -1
+                        })
+                    }
+                },
+                subForm: function(e) {
+                    e.preventDefault()
+                    $("#selected_events").val(JSON.stringify(eventApp.selected))
+                    $("#form").submit()
+                },
+            }
+        })
+    })
+    $(window).on('resize', function() {
+       $('.form-group').each(function() {
+            var formGroup = $(this),
+                formgroupWidth = formGroup.outerWidth();
+            formgroupWidth = formgroupWidth * .9;
+            formGroup.find('.select2-container').css('width', formgroupWidth);
+            
+        });
+        $(".select2-search__field").attr('style', "");    
+    });
+
+</script>
+{% endblock %}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Competition, Event, Staff
+from .models import Competition, Event, Staff, Round
 # Register your models here.
 
 
@@ -19,6 +19,23 @@ class CompetitionAdmin(admin.ModelAdmin):
     ]
 
 
+class CoupleInline(admin.TabularInline):
+    model = Event.couples.through
+
+
+class RoundInline(admin.TabularInline):
+    model = Round
+
+
+class EventAdmin(admin.ModelAdmin):
+    model = admin
+    inlines = [
+        RoundInline,
+        CoupleInline
+    ]
+
+
 admin.site.register(Competition, CompetitionAdmin)
+admin.site.register(Event, EventAdmin)
 # admin.site.register(Event)
 # admin.site.register(Staff)
