@@ -18,5 +18,7 @@ urlpatterns = [
         name="request_confirm"),
     url(r'^requests/delete/$', views.RequestDelete.as_view(),
         name="request_deny"),
+    url(r'^registrations/', views.RegistrationsView.as_view(),
+        name="registrations")
 
 ]

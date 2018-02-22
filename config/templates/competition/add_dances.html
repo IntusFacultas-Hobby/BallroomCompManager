@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Add Dances{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-sm-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h2>Add Dances to {{ competition.name }}</h2>
+            </div>
+            <div class="panel-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ formset.management_form }}
+                    <table class="table table-striped">
+                        {% for form in formset %}
+                        {% if forloop.first %}
+                            <thead>
+                            <tr>
+                                {% for field in form.visible_fields %}
+                                    <th>{{ field.label|capfirst }}</th>
+                                {% endfor %}
+                            </tr>
+                            </thead>
+                        {% endif %}
+                        <tr class="{% cycle 'row1' 'row2' %} formset_row">
+                            {% for field in form.visible_fields %}
+                                <td>
+                                    {# Include the hidden fields in the form #}
+                                    {% if forloop.first %}
+                                        {% for hidden in form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                    {% endif %}
+                                    {% render_field field class+="form-control" %}
+                                    {% if field.errors|length > 0 %}
+                                    <div class="form-group">
+                                        <ul>
+                                            {% for error in field.errors %}
+                                            <li style="color: red">{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </table>
+                    <button class="btn btn-primary" type="submit">Add Dances</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block js %}
+<script type="text/javascript">
+        $('.formset_row').formset({
+            addText: 'Add Dance',
+            deleteText: 'Remove',
+            prefix: 'dances',
+            addCssClass: 'btn btn-sm btn-primary',
+            deleteCssClass: 'btn btn-sm btn-danger',
+        });
+</script>
+{% endblock %}
+
+            

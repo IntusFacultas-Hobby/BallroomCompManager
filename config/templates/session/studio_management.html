@@ -213,12 +213,20 @@
                                                         View TODO
                                                     </button>
                                                 {% else %}
+                                                    {% if comp.published == True %}
                                                     <a class="btn btn-primary" href="{% url 'competition:manage' competition=comp.id %}">
                                                         Manage
                                                     </a>
+                                                    {% else %}
+                                                        <form id="activate{{forloop.counter}}" method="post"  style="margin:0px" action="{% url 'competition:activate' competition=comp.id %}">
+                                                            {% csrf_token %}
+                                                            <button onclick="activate({{forloop.counter}})" type="button" class="btn btn-default">Publish</button>
+                                                        </form>
+                                                    {% endif %}
                                                     <a href="{% url 'competition:edit' competition=comp.id %}" class="btn btn-info">
                                                         Edit
                                                     </a>
+                                                        
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -242,6 +250,24 @@
 {% block js %}
 {{ form.media.js }}
 <script type="text/javascript">
+    function activate(id) {
+        $.confirm({
+            type: "orange",
+            backgroundDismiss: false,
+            title: 'Are you sure?',
+            content: 'Once you publish this competition, dancers can begin to register for the competition. Making changes to the competition through the edit page after publishing it can result in lost registrations and results.',
+            buttons: {
+                confirm: function () {
+                    var form = "#activate" + id;
+                    $(form).submit();
+                },
+                cancel: function () {
+                    
+                },
+            }
+        });
+        console.log(id);
+    }
     $(function() {
         $("#dancers").floatThead({
             scrollContainer: function($table){

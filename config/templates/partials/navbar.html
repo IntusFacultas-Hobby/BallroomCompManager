@@ -12,10 +12,11 @@
                     <a class="nav-link dropdown-toggle" style="cursor:pointer" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {% if user.is_authenticated %} Hello {% endif %} {{ user.dancer.name }} <i style="margin-left: 5px" class="fa fa-cog fa-lg" aria-hidden="true"></i>
                     </a>
-                    <ul class="dropdown-menu dropdown pull-right" style="margin-left: -150px; width: 220px;" aria-labelledby="dropdownMenu2">
+                    <ul class="dropdown-menu dropdown pull-right" style="margin-left: -150px; width: 220px; z-index: 1002" aria-labelledby="dropdownMenu2">
                         {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'session:logout' %}">Log Out</a>
+                            <a class="nav-link" href="{% url 'session:registrations' %}">My Registrations</a>
                             <a class="nav-link" href="{% url 'session:account' %}">Account Settings</a>
                             <a class="nav-link" href="{% url 'session:studio' %}">Studio Management</a>
                         </li>

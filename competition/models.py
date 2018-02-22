@@ -5,7 +5,14 @@ from django.db.models import Q, Max
 
 
 class Competition(models.Model):
+    """
+    A competition has events, which have rounds and dances.
+    Rounds also have dances. Each round has a performance which also belongs
+    to a dance of that round. A performance has marks which are associated to a
+    judge
+    """
     name = models.CharField("Name", max_length=256)
+    published = models.BooleanField("Published", default=False)
     date_of_start = models.DateField("Date of Competition")
     end_date_of_registration = models.DateField("Registration Deadline")
     host = models.ForeignKey(Studio, on_delete=models.CASCADE,
@@ -18,13 +25,21 @@ class Competition(models.Model):
     event_limit = models.IntegerField("Event Limit", blank=True, null=True)
     # contains a hash summarizing it's current state
     status = models.CharField("Heat List", max_length=1000000,
-                                 blank=True, null=True)
+                              blank=True, null=True)
+
     @property
     def past_registration(self):
         return date.today() > self.end_date_of_registration
 
     def __str__(self):              # __unicode__ on Python 2
         return "%s %s" % (self.date_of_start, self.name)
+
+    def as_dict(self):
+        dances = self.dances.all()
+        dances = [obj.as_dict() for obj in dances]
+        return {
+            "dances": dances
+        }
 
 
 class Staff(models.Model):
@@ -141,15 +156,38 @@ class Round(models.Model):
         }
 
 
+class Dance(models.Model):
+    name = models.CharField("Name", max_length=256)
+    event = models.ManyToManyField(
+        Event, related_name="dances")
+    round_of_event = models.ForeignKey(
+        Round, on_delete=models.SET_NULL,
+        blank=True, null=True,
+        related_name="dances")
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE,
+                                    related_name="dances")
+
+    def __str__(self):
+        return self.name
+
+    def as_dict(self):
+        return {
+            "id": self.pk,
+            "name": self.name,
+        }
+
+
 class Couple(models.Model):
     lead = models.ForeignKey(Dancer, on_delete=models.CASCADE,
                              related_name="is_lead")
     follow = models.ForeignKey(Dancer, on_delete=models.CASCADE,
                                related_name="is_follow")
     events = models.ManyToManyField(Event, related_name="couples")
+    checked_in = models.ManyToManyField(Round, related_name="checked_in")
     rounds = models.ManyToManyField(Round, blank=True,
                                     related_name="couples")
-    competition = models.ForeignKey(Competition, related_name="couples")
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE,
+                                    related_name="couples")
     couple_number = models.IntegerField("Competition Number")
     totalMarks = models.IntegerField("Marks", blank=True, null=True)
 
@@ -160,12 +198,17 @@ class Couple(models.Model):
             "number": self.couple_number,
         }
 
-    def __str__(self):  
+    def __str__(self):
         return self.lead.name + " and " + self.follow.name
 
 
 class Performance(models.Model):
-    round = models.ForeignKey(
+    dance = models.ForeignKey(
+        Dance,
+        on_delete=models.CASCADE,
+        related_name="results"
+    )
+    round_of_performance = models.ForeignKey(
         Round,
         on_delete=models.CASCADE,
         related_name="results"
@@ -180,7 +223,7 @@ class Performance(models.Model):
         marks = Mark.objects.filter(performance=self)
         marks_dict = [obj.as_dict() for obj in marks]
         return {
-            "round": self.round.as_dict(),
+            "dance": self.dance.as_dict(),
             "couple": self.couple.as_dict(),
             "marks": marks_dict
         }

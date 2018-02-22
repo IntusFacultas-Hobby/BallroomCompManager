@@ -7,13 +7,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.shortcuts import render
+from django.db.models import Q
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ObjectDoesNotExist
-from competition.models import (Competition, Staff, Event,
+from competition.models import (Competition, Staff, Event, Round, Dance,
                                 Mark, Performance, Couple)
-from competition.forms import CompetitionForm, EventFormSet
+from competition.forms import (CompetitionForm, EventFormSet, DanceFormSet,
+                               EventCreationFormSet)
 from competitor.models import Dancer
-
+from difflib import SequenceMatcher
 
 class CompetitionCreateView(LoginRequiredMixin, View):
     def get(self, request):
@@ -55,11 +57,59 @@ class CompetitionCreateView(LoginRequiredMixin, View):
                         role=role[0]
                     )
                 messages.success(
-                    request, "Competition created. Please add events now.")
+                    request,
+                    "Competition created. Please add which dances will be available in your competition now.")
                 return HttpResponseRedirect(
-                    reverse("competition:events-create",
+                    reverse("competition:dances-create",
                             kwargs={'competition': competition.pk})
                 )
+
+
+class CompetitionAddDances(LoginRequiredMixin, View):
+    def get(self, request, competition):
+        comp = Competition.objects.get(pk=competition)
+        if (request.user.dancer.owned_studio is None or
+                comp.host != request.user.dancer.owned_studio):
+            messages.error(
+                request,
+                "You do not have permission to modify this competition."
+            )
+            return HttpResponseRedirect(reverse("session:studio"))
+        else:
+            formset = DanceFormSet()
+            return render(request, 'competition/add_dances.html', {
+                "formset": formset,
+                "competition": comp
+            })
+
+    def post(self, request, competition):
+        comp = Competition.objects.get(pk=competition)
+        if (request.user.dancer.owned_studio is None or
+                comp.host != request.user.dancer.owned_studio):
+            messages.error(
+                request,
+                "You do not have permission to modify this competition."
+            )
+            return HttpResponseRedirect(reverse("session:studio"))
+        formset = DanceFormSet(request.POST)
+        if formset.is_valid() is False:
+            messages.error(
+                request, "Please review the forms and try again.")
+            return render(request, 'competition/add_dances.html', {
+                "formset": formset,
+                "competition": comp
+            })
+        for form in formset:
+            if form.is_valid():
+                dance = form.save(commit=False)
+                dance.competition = comp
+                dance.save()
+        messages.success(
+            request, "Dances added successfully. Next, create events and associate dances to them.")
+        return HttpResponseRedirect(
+            reverse("competition:events-create",
+                    kwargs={'competition': comp.pk})
+        )
 
 
 class CompetitionAddEvents(LoginRequiredMixin, View):
@@ -73,10 +123,13 @@ class CompetitionAddEvents(LoginRequiredMixin, View):
             )
             return HttpResponseRedirect(reverse("session:studio"))
         else:
-            formset = EventFormSet()
+            formset = EventCreationFormSet()
+            dances = comp.dances.all()
+            dances = [obj.as_dict() for obj in dances]
             return render(request, 'competition/add_events.html', {
                 "formset": formset,
-                "competition": comp
+                "competition": comp,
+                "dances": dances
             })
 
     def post(self, request, competition):
@@ -96,11 +149,18 @@ class CompetitionAddEvents(LoginRequiredMixin, View):
                 "formset": formset,
                 "competition": comp
             })
+        counter = 0
         for form in formset:
             if form.is_valid():
                 event = form.save(commit=False)
                 event.competition = comp
                 event.save()
+                accessor = 'events-' + str(counter) + '-dances[]'
+                dances = request.POST.getlist(accessor)
+                for dance in dances:
+                    d = Dance.objects.get(pk=dance)
+                    event.dances.add(d)
+                counter += 1
         messages.success(request, "Events added successfully")
         return HttpResponseRedirect(reverse("session:studio"))
 
@@ -117,17 +177,21 @@ class CompetitionEditView(LoginRequiredMixin, View):
             return HttpResponseRedirect(reverse("session:studio"))
         else:
             formset = EventFormSet(instance=comp)
+            for form in formset:
+                form.fields['dances'].queryset = comp.dances.all()
             form = CompetitionForm(instance=comp)
             dancers = Dancer.objects.exclude(roles__competition=comp)
             dictionaries = [obj.as_dict() for obj in dancers]
             staff = Staff.objects.filter(competition=comp)
             staff_dictionaries = [obj.as_dict() for obj in staff]
+            dances = comp.as_dict()
             return render(request, 'competition/competition_edit.html', {
                 "formset": formset,
                 "form": form,
                 "competition": comp,
                 "users": dictionaries,
-                "staff": staff_dictionaries
+                "staff": staff_dictionaries,
+                "dances": dances
             })
 
     def post(self, request, competition):
@@ -146,7 +210,6 @@ class CompetitionEditView(LoginRequiredMixin, View):
                 saved_comp = form.save(commit=False)
                 saved_comp.host = request.user.dancer.owned_studio
                 saved_comp.save()
-                print(saved_comp.date_of_start)
                 messages.success(request, "Competition successfully updated.")
                 return HttpResponseRedirect(
                     reverse("competition:edit",
@@ -154,10 +217,18 @@ class CompetitionEditView(LoginRequiredMixin, View):
             else:
                 messages.error(request, "Please check form and try again.")
                 formset = EventFormSet(events)
+                dancers = Dancer.objects.exclude(roles__competition=comp)
+                dictionaries = [obj.as_dict() for obj in dancers]
+                staff = Staff.objects.filter(competition=comp)
+                staff_dictionaries = [obj.as_dict() for obj in staff]
+                dances = comp.as_dict()
                 return render(request, 'competition/competition_edit.html', {
                     "formset": formset,
                     "form": form,
-                    "competition": comp
+                    "competition": comp,
+                    "users": dictionaries,
+                    "staff": staff_dictionaries,
+                    "dances": dances
                 })
         elif request.POST.get("form_type") == 'staff':
             data = request.POST.get("staff")
@@ -178,22 +249,44 @@ class CompetitionEditView(LoginRequiredMixin, View):
                 reverse("competition:edit",
                         kwargs={'competition': comp.pk}))
         else:
-            formset = EventFormSet(request.POST, instance=comp)
+            # we use creation form here because the other form tries to validate
+            # dances, and that leads to an invalid result when it should be valid.
+            formset = EventCreationFormSet(request.POST, instance=comp)
             if formset.is_valid() is False:
+                for form in formset:
+                    form.fields['dances'].queryset = comp.dances.all()
                 form = CompetitionForm(instance=comp)
+                dancers = Dancer.objects.exclude(roles__competition=comp)
+                dictionaries = [obj.as_dict() for obj in dancers]
+                staff = Staff.objects.filter(competition=comp)
+                staff_dictionaries = [obj.as_dict() for obj in staff]
+                dances = comp.as_dict()
                 return render(request, 'competition/competition_edit.html', {
                     "formset": formset,
                     "form": form,
-                    "competition": comp
+                    "competition": comp,
+                    "users": dictionaries,
+                    "staff": staff_dictionaries,
+                    "dances": dances
                 })
             else:
-                comp.events.all().delete()
+                counter = 0
                 for form in formset:
+                    print(form.cleaned_data.get('id'))
+                    print(form.cleaned_data.get('DELETE'))
                     if (form.is_valid() and
                             form.cleaned_data.get('DELETE') is False):
                         event = form.save(commit=False)
                         event.competition = comp
                         event.save()
+                        for dance in form.data.getlist(
+                                'events-' + str(counter) + '-dances'):
+                            event.dances.add(Dance.objects.get(pk=dance))
+                        event.save()
+                    elif (form.cleaned_data.get('DELETE') is True):
+                        form.cleaned_data.get('id').delete()
+                    counter += 1
+
                 messages.success(request, "Competition successfully updated.")
                 return HttpResponseRedirect(
                     reverse("competition:edit",
@@ -203,7 +296,7 @@ class CompetitionEditView(LoginRequiredMixin, View):
 class CompetitionListView(LoginRequiredMixin, View):
     def get(self, request):
         upcoming = Competition.objects.filter(
-            date_of_start__gte=datetime.date.today())
+            date_of_start__gte=datetime.date.today(), published=True)
         past = Competition.objects.filter(
             date_of_start__lte=datetime.date.today())
         return render(request, "competition/competition_list.html", {
@@ -214,16 +307,23 @@ class CompetitionListView(LoginRequiredMixin, View):
 
 class CompetitionManageView(LoginRequiredMixin, View):
     def find_heat(self, heats, pk):
+        '''
+        This finds a heat within a list (not a queryset) and returns it
+        '''
         pk = int(pk)
-        print("Finding " + str(pk))
-        print(heats)
         for heat in heats:
-            print(str(heat) + " pk=" + str(heat.pk))
             if heat.pk == pk:
                 return heat
         return None
 
     def update_hash(self, competition):
+        '''
+        This generates a hash that represents the current state of the
+        competition by taking all rounds (and the order of them) and
+        generating a JSON stringified array of the event id and couples. This
+        gets fed into a SHA256 hash and is used to compare with the result
+        of the same algorithm on the client side
+        '''
         events = competition.events.all()
         rounds = []
         for event in events:
@@ -241,6 +341,7 @@ class CompetitionManageView(LoginRequiredMixin, View):
                 ))
             })
         status = json.dumps(ordered_heats)
+        # white space is removed because it is extraneous information
         status = status.replace(" ", "")
         status = status.encode("utf-8")
         hash_output = hashlib.sha256()
@@ -249,6 +350,12 @@ class CompetitionManageView(LoginRequiredMixin, View):
         return hash_output
 
     def generate_round_population(self, population, limit):
+        '''
+        This is used to generate the round statistics needed when
+        creating rounds. The algorithm attempts to evenly distribute the
+        population into rounds of the requested limit. Failing this, it tries
+        to create rounds that violate the limit as little as possible.
+        '''
         # population is smaller than limit, just have one round
         if population < limit:
             return {
@@ -303,13 +410,13 @@ class CompetitionManageView(LoginRequiredMixin, View):
     def get(self, request, competition):
         comp = Competition.objects.get(pk=competition)
         roles_in_comp = request.user.dancer.roles.filter(competition=comp)
-        print(request.user.dancer)
-        print(len(request.user.dancer.roles.filter(competition=comp)))
         unqualified = False
         if len(roles_in_comp) == 0:
             unqualified = True
+        # if the person is not staff or the owner, they shouldn't have access
         if ((request.user.dancer.owned_studio is None or
-                comp.host != request.user.dancer.owned_studio) and unqualified):
+                comp.host != request.user.dancer.owned_studio) and
+                unqualified):
             messages.error(
                 request,
                 "You do not have permission to manage this competition."
@@ -322,15 +429,26 @@ class CompetitionManageView(LoginRequiredMixin, View):
         events = Event.objects.filter(competition=comp)
         events_dict = [obj.as_dict() for obj in events]
         rounds = []
+
+        # add all the heats for all the events together to make a list of all
+        # heats.
         for event in events:
             rounds = chain(rounds, event.heats.all())
         rounds = list(rounds)
-        ordered_array = json.loads(comp.heat_list)
-        ordered_heats = []
-        for pk in ordered_array:
-            heat = self.find_heat(rounds, pk)
 
-            ordered_heats.append(heat)
+        """
+        If a heat list exists, then we must order the heats in the order that
+        the competition manager has specified. Otherwise, we should just list
+        them in order they are crated.
+        """
+        if comp.heat_list:
+            ordered_array = json.loads(comp.heat_list)
+            ordered_heats = []
+            for pk in ordered_array:
+                heat = self.find_heat(rounds, pk)
+                ordered_heats.append(heat)
+        else:
+            ordered_heats = rounds
         heat_list = comp.heat_list
         if heat_list != "" and heat_list is not None:
             heat_list = json.loads(heat_list)
@@ -347,6 +465,7 @@ class CompetitionManageView(LoginRequiredMixin, View):
     def post(self, request, competition):
         comp = Competition.objects.get(pk=competition)
         if request.POST.get("form_type") == 'competition_start':
+            # begins competition and generates rounds
             comp.begun = True
             comp.save()
             events = Event.objects.filter(competition=comp)
@@ -356,19 +475,17 @@ class CompetitionManageView(LoginRequiredMixin, View):
                 round_calculation = num_event_couples
                 round_counter = 0
                 while (round_calculation > 3):
-                    print("round_calculation " + str(round_calculation))
                     # create heats here
                     round_counter += 1
                     round_population = self.generate_round_population(
                         round_calculation,
                         event_heat_limit
                     )
-                    print("round_population " + json.dumps(round_population))
                     num_heats = round_population["number_of_heats"]
                     for x in range(0, num_heats):
                         event.heats.create(round_number=round_counter)
                     round_calculation = int(round_calculation / 2)
-                # add couples to first round events
+                # add couples to first round heats of this event
                 first_round_heats = event.heats.filter(round_number=1)
                 event_couples = event.couples.all()
                 round_stats = self.generate_round_population(
@@ -379,13 +496,14 @@ class CompetitionManageView(LoginRequiredMixin, View):
                 current_round_being_populated = 0
                 for couple in event_couples:
                     if added_couples >= round_stats["limit"]:
+                        # if we are on the last heat, add all remaining couples
                         if (current_round_being_populated + 1 !=
                                 round_stats["number_of_heats"]):
                             current_round_being_populated += 1
                         added_couples = 0
-                    first_round_heats[current_round_being_populated].couples.add(
-                        couple
-                    )
+                    first_round_heats[
+                        current_round_being_populated
+                    ].couples.add(couple)
                     added_couples += 1
             messages.success(
                 request,
@@ -414,25 +532,63 @@ class CompetitionManageView(LoginRequiredMixin, View):
                 reverse("competition:manage",
                         kwargs={'competition': comp.pk}))
         elif request.POST.get("form_type") == "order":
+            # this is called solely by the event owner. Reorders the heats
             data = request.POST.getlist("heatOrder[]")
-            print("Previous Heat List: " + comp.heat_list)
             comp.heat_list = json.dumps(data)
-            print("New Heat List: " + comp.heat_list)
             comp.save()
-            print("Previous status: " + comp.status)
             comp.status = self.update_hash(comp)
             comp.save()
-            print("New status: " + comp.status)
             return HttpResponse("Ok", status=200)
-        elif request.POST.get("form_type") == "checkin":
+        elif request.POST.get("form_type") == "refresh":
+            # compares server state to client state using hashes
             data = request.POST.get("hash")
             status = comp.status
-            print("From Client " + data)
-            print("From Server " + status)
             if (data == status):
                 return HttpResponse("Ok", status=200)
             else:
                 return HttpResponse("Update", status=201)
+        elif request.POST.get("form_type") == "compare_heat":
+            dancers_post = request.POST.getlist("dancers[]")
+            data = int(request.POST.get("heat"))
+            heat = Round.objects.get(pk=data)
+            checked_in_dancers = heat.checked_in.all()
+            dancer_ids = []
+            for dancer in checked_in_dancers:
+                dancer_ids.append(dancer.couple_number)
+            dancers = []
+            for dancer in dancers_post:
+                dancers.append(int(dancer))
+            dancers.sort()
+            dancer_ids.sort()
+            for dancer in dancer_ids:
+                # its ok if dancers has values not in the server side because
+                # new dancers will be checked in. But the server must at least
+                # give the newest data
+                if dancer not in dancers:
+                    # found a dancer not in the user's set. Have to send
+                    # updated data but first, add new dancers from user
+                    for new_dancer in dancers:
+                        if new_dancer not in dancer_ids:
+                            django_dancer = Couple.objects.get(
+                                couple_number=new_dancer,
+                                competition=comp
+                            )
+                            heat.checked_in.add(django_dancer)
+                    return JsonResponse({
+                        "changed": True,
+                        "dancers": dancer_ids,
+                    })
+            # client has all of server's data. Check if client has new data
+            for new_dancer in dancers:
+                if new_dancer not in dancer_ids:
+                    django_dancer = Couple.objects.get(
+                        couple_number=new_dancer,
+                        competition=comp
+                    )
+                    heat.checked_in.add(django_dancer)
+            return JsonResponse({
+                "changed": False
+            })
 
 
 class CompetitionAJAX(View):
@@ -443,9 +599,28 @@ class CompetitionAJAX(View):
         return JsonResponse(response)
 
 
+class CompetitionActivateView(LoginRequiredMixin, View):
+    def post(self, request, competition):
+        comp = Competition.objects.get(pk=competition)
+        if (request.user.dancer.owned_studio is None or
+                comp.host != request.user.dancer.owned_studio):
+            messages.error(
+                request,
+                "You do not have permission to modify this competition."
+            )
+            return HttpResponseRedirect(reverse("session:studio"))
+        comp.published = True
+        comp.save()
+        messages.success(request, "Competition successfully published.")
+        return HttpResponseRedirect(reverse("session:studio"))
+
+
 class CompetitionSignupView(LoginRequiredMixin, View):
     def get(self, request, competition):
         comp = Competition.objects.get(pk=competition)
+        exists = comp.couples.filter(
+            Q(lead=request.user.dancer) |
+            Q(follow=request.user.dancer)).count() > 0
         dancers = Dancer.objects.all()
         dictionaries = [obj.as_dict() for obj in dancers]
         events = Event.objects.filter(competition=comp)
@@ -453,7 +628,8 @@ class CompetitionSignupView(LoginRequiredMixin, View):
         return render(request, "competition/competition_signup.html", {
             "competition": comp,
             "users": dictionaries,
-            "events": events_dict
+            "events": events_dict,
+            "exists": exists
         })
 
     def post(self, request, competition):
@@ -481,6 +657,20 @@ class CompetitionSignupView(LoginRequiredMixin, View):
             couple = event["couple"]
             lead = couple[0]
             follow = couple[1]
+            lead_django = Dancer.objects.get(judging_pin=lead["judging_pin"])
+            follow_django = Dancer.objects.get(judging_pin=lead["judging_pin"])
+            if (lead_django is not request.user.dancer) and (follow_django is not request.user.dancer):
+                messages.error(request,
+                    "You need to be one of the members of the couple. Signing up for other couples is not allowed.")
+                dancers = Dancer.objects.all()
+                dictionaries = [obj.as_dict() for obj in dancers]
+                events = Event.objects.filter(competition=comp)
+                events_dict = [obj.as_dict() for obj in events]
+                return render(request, "competition/competition_signup.html", {
+                    "competition": comp,
+                    "users": dictionaries,
+                    "events": events_dict
+                })
             django_couple = object
             try:
                 django_couple = Couple.objects.get(
@@ -514,7 +704,6 @@ class CompetitionSignupView(LoginRequiredMixin, View):
 
         for pair in events_to_be_added:
             couple = pair["couple"]
-            print(pair["event"])
             couple.events.add(pair["event"])
         messages.success(
             request,

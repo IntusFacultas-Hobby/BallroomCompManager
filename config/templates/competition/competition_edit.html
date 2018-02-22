@@ -131,7 +131,7 @@
     <div class="col-sm-offset-1 col-sm-10">
         <div class="panel panel-primary">
             <div class="panel-heading">
-                <h2>Modify {{ competition.name }}'s Events</h2>
+                <h2>Add or Remove Events from {{ competition.name }}</h2>
             </div>
             <div class="panel-body">
                 <form method="post">
@@ -186,6 +186,7 @@
         var app;
         var store;
         var handleSubmission;
+        var dances = '{{dances}}'
         $('.formset_row').formset({
             addText: 'Add Event',
             deleteText: 'Remove',
@@ -198,6 +199,7 @@
                 $(row).each(function(){
                     formElements.push($(this).find(':input'));
                 });
+                console.log(formElements)
                 $(formElements[0][4]).datetimepicker({
                 "format": "HH:mm",
                 "icons": {
@@ -208,13 +210,17 @@
                 $(formElements[0][4]).next().click(function(event) {
                     $(formElements[0][4]).data("DateTimePicker").show();
                 })
+                var $dropdown = $(formElements[0][6]);
+                $.each(dances, function() {
+                    console.log("populating")
+                    $dropdown.append($("<option />").val(this.id).text(this.name));
+                });
+                // $(formElements[0][6]).val('');
+                $(formElements[0][6]).select2();
             },
             removed: function(row) {
                 $(row).find('input').each(function() {
-                    // $(this).remove()
                     console.log($(this).val())
-                    // $(this).val("")
-                    // console.log($(this).val())
                 })
             }
         });
@@ -225,6 +231,22 @@
                 "background-color", "#ffffff");
         });
         $(function() {
+            {% if competition.begun %}
+                $.alert({
+                    title: 'Warning!',
+                    content: 'This competition is currently active. Modifying it using this page can have severe consequences. We strongly recommend that you use the management page instead. Modifications made here can wipe registration information and results!',
+                    type: 'orange',
+                });
+            {% endif %}
+            dances = dances.split("&#39;").join("\"")
+            console.log(dances)
+            dances = JSON.parse(dances)
+            $("select").each(function() {
+                $(this).select2()
+            })
+            $(".staff_option").each(function() {
+                $(this).select2('destroy');
+            })
             handleSubmission = function(e) {
                 e.preventDefault();
                 $("#staff_values").val(JSON.stringify(app.selected))

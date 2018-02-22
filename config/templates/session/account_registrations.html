@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}My Registrations{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h1>Upcoming Competitions</h1>
+        <div class="wrapper">
+            <table id="upcoming_events" class="table table-striped table-hover">
+                <thead>
+                    <thead>
+                        <tr style="background-color:white;">
+                            <th>Competition Name</th>
+                            <th>Lead</th>
+                            <th>Follow</th>
+                            <th>Events</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registration in events %}
+                            <tr>
+                                <td>
+                                    {{ registration.competition }}
+                                </td>
+                                <td>
+                                    {{ registration.lead }}
+                                </td>
+                                <td>
+                                    {{ registration.follow }}
+                                </td>
+                                <td>
+                                    <ul class="list-group">
+                                        {% for event in registration.events.all %}
+                                            <li class="list-group-item">{{ event.name }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td>
+                                    <a href="{% url 'competition:signup' competition=registration.competition.id %}" class="btn btn-sm btn-primary {% if registration.competition.past_registration %} btn-disabled {% endif %}"  {% if registration.competition.past_registration %} disabled="disabled" {% endif %}>Update Registration</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" style="text-align:center">
+                                    No competitions yet
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+            </table>
+        </div>        
+    </div>
+</div>
+{% endblock content %}
+
+{% block js %}
+<script type="text/javascript">
+    $("#upcoming_events").floatThead({
+        scrollContainer: function($table){
+            return $table.closest('.wrapper');
+        }
+    });
+</script>
+{% endblock %}

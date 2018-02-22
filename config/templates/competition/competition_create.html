@@ -6,68 +6,70 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-offset-1 col-lg-10">
-        <div id="staffZone" data-js-vars="{{ users }}" class="panel panel-primary">
-            <div class="panel-heading">
-                <h2>Add Staff</h2>
-            </div>
-            <div class="panel-body">
-                <div class="row">
-                    <label class="control-label col-sm-3">Search for a Person</label>
-                    <div class="col-sm-7">
-                        <input type="text" class="form-control" v-model="text">
-                    </div>
+        <div class="row">
+            <div id="staffZone" data-js-vars="{{ users }}" class="panel panel-primary">
+                <div class="panel-heading">
+                    <h2>Add Staff</h2>
                 </div>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <h3>Matching Queries</h3>
-                        <div class='wrapper' style="height: 200px">
-                            <table id="results" class="table table-hover table-striped">
-                                <thead>
-                                    <tr style="background-color:white;">
-                                        <th>Person</th>
-                                        <th>Pin</th>
-                                        <th>Role</th>
-                                        <th>&nbsp;</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="person in people">
-                                        <td>((person.name))</td>
-                                        <td>((person.judging_pin))</td>
-                                        <td>
-                                            <select v-bind:id="((person.judging_pin))" class="form-control staff_option">
-                                                <option value="0">Logistic / Deck Captain</option>
-                                                <option value="1">Judge</option>
-                                            </select>
-                                        </td>
-                                        <td><button class="btn btn-primary btn-sm" v-on:click="addPerson(person.judging_pin, $event)">Add</button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <div class="panel-body">
+                    <div class="row">
+                        <label class="control-label col-sm-3">Search for a Person</label>
+                        <div class="col-sm-7">
+                            <input type="text" class="form-control" v-model="text">
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <h3>Selected Staff</h3>
-                        <div class='wrapper' style="height: 200px">
-                            <table id="chosen" class="table table-hover table-striped">
-                                <thead>
-                                    <tr style="background-color: white;">
-                                        <th>Person</th>
-                                        <th>Role</th>
-                                        <th>&nbsp;</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="entry in selected">
-                                        <td>((entry.person.name))</td>
-                                        <td>
-                                           <span v-if="entry.role == 0">Logistic / Deck Captain</span>
-                                           <span v-else>Judge</span>
-                                        </td>
-                                        <td><button class="btn btn-danger btn-sm" v-on:click="removePerson(entry.person.judging_pin)"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h3>Matching Queries</h3>
+                            <div class='wrapper' style="height: 200px">
+                                <table id="results" class="table table-hover table-striped">
+                                    <thead>
+                                        <tr style="background-color:white;">
+                                            <th>Person</th>
+                                            <th>Pin</th>
+                                            <th>Role</th>
+                                            <th>&nbsp;</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="person in people">
+                                            <td>((person.name))</td>
+                                            <td>((person.judging_pin))</td>
+                                            <td>
+                                                <select v-bind:id="((person.judging_pin))" class="form-control staff_option">
+                                                    <option value="0">Logistic / Deck Captain</option>
+                                                    <option value="1">Judge</option>
+                                                </select>
+                                            </td>
+                                            <td><button class="btn btn-primary btn-sm" v-on:click="addPerson(person.judging_pin, $event)">Add</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <h3>Selected Staff</h3>
+                            <div class='wrapper' style="height: 200px">
+                                <table id="chosen" class="table table-hover table-striped">
+                                    <thead>
+                                        <tr style="background-color: white;">
+                                            <th>Person</th>
+                                            <th>Role</th>
+                                            <th>&nbsp;</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="entry in selected">
+                                            <td>((entry.person.name))</td>
+                                            <td>
+                                               <span v-if="entry.role == 0">Logistic / Deck Captain</span>
+                                               <span v-else>Judge</span>
+                                            </td>
+                                            <td><button class="btn btn-danger btn-sm" v-on:click="removePerson(entry.person.judging_pin)"><i class="fa fa-times" aria-hidden="true"></i></button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -193,7 +195,7 @@
                         var search = this.text
                         var data = store.state.users;
                         var filtered = data.filter(function(user) {
-                            return user.name.indexOf(search) > -1
+                            return user.name.toUpperCase().indexOf(search.toUpperCase()) > -1
                         })
                         return filtered;
                     }

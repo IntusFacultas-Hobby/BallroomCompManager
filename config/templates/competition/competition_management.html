@@ -3,15 +3,6 @@
 
 {% block title %}Manage Competition{% endblock %}
 {% block content %}
-{% if request.user.dancer.owned_studio == competition.host %}
-<div class="row">
-    <div class="col-lg-offset-1 col-lg-10">
-        <div class="alert alert-dismissible alert-info">
-            <strong>Heads up!</strong> Rearranging or activating heats will automatically update all logistical staff's competition management pages. No submission is required. As the competition owner, you are the only one who can do so. You are also the only one who can update the staff.
-        </div>
-    </div>
-</div>
-{% endif %}
     <div class="row">
         <div class="col-lg-4">
             <div class="row">
@@ -38,12 +29,12 @@
                                     <div class="col-lg-12">
                                         <div class="row">
                                             <div class="col-lg-12">
-                                                <a href="" class="btn btn-primary">Re-generate Rounds TODO</a>
+                                                <a href="" class="btn btn-primary">Show Heat List TODO</a>
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-lg-12">
-                                                <small>This will generate or regenerate the rounds for an event, preserving results for existing dancers, dropping dancers that have been DQ'd or withdrawn and including newly enlisted dancers. This action is done automatically, but can be done manually here.</small>
+                                                <small>This will open a heat list that can be displayed to competitors to allow competitors to know which event is currently on, which event is on deck, and show results</small>
                                             </div>
                                         </div>    
                                     </div>
@@ -90,11 +81,11 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="panel-body" style="max-height:760px; overflow-y: scroll" v-sortable>
+                        <div class="panel-body" style="max-height:560px; overflow-y: scroll" v-sortable>
                             <ul id="sortableHeats" style="list-style-type: none; padding: 0px;">
                                 <li v-bind:id="heat.id" v-for="heat in heats">
                                     <div v-if="calculate(!heat.active, !heat.completed)" class="panel panel-default" style="margin:5px;">
-                                        <div class="panel-heading">
+                                        <div class="panel-heading" style="padding-bottom: 0px; padding-top:0px">
                                             <div class="row">
                                                 <div class="col-lg-12">
                                                     (( heat.name ))
@@ -119,7 +110,7 @@
                                         </div>
                                     </div>
                                     <div v-if="calculate(heat.active, !heat.completed)" class="panel panel-primary" style="margin:5px;">
-                                        <div class="panel-heading">
+                                        <div class="panel-heading"  style="padding-bottom: 0px; padding-top:0px">
                                              <div class="row">
                                                 <div class="col-lg-12">
                                                     (( heat.name ))
@@ -144,7 +135,7 @@
                                         </div>
                                     </div>
                                     <div v-if="calculate(!heat.active, heat.completed)" class="panel panel-warning" style="margin:5px;">
-                                        <div class="panel-heading">
+                                        <div class="panel-heading"  style="padding-bottom: 0px; padding-top:0px">
                                              <div class="row">
                                                 <div class="col-lg-12">
                                                     (( heat.name ))
@@ -175,95 +166,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-8">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div id="staffZone" data-js-vars="{{ users }}" heat_list-js-vars="{{ heat_list }}" events-js-vars="{{ events }}" heats-js-vars="{{ heats }}" staff-js-vars="{{ staff }}" class="panel panel-primary">
-                        <div class="panel-heading">
-                            <h4>Competition Staff</h4>
-                        </div>
-                        <div class="panel-body">
-                            <div class="row">
-                                <label class="control-label col-sm-3">Add New Staff</label>
-                                <div class="col-sm-7">
-                                    <input type="text" class="form-control" v-model="text">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-lg-6">
-                                    <h3>Matching Queries</h3>
-                                    <div class='wrapper' style="overflow-x:hidden; height: 200px">
-                                        <table id="results" class="table table-hover table-striped">
-                                            <thead>
-                                                <tr style="background-color:white;">
-                                                    <th>Person</th>
-                                                    <th>Pin</th>
-                                                    <th>Role</th>
-                                                    <th>&nbsp;</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr v-for="person in people">
-                                                    <td>((person.name))</td>
-                                                    <td>((person.judging_pin))</td>
-                                                    <td>
-                                                        <select v-bind:id="((person.judging_pin))" class="form-control staff_option">
-                                                            <option value="0">Logistic / Deck Captain</option>
-                                                            <option value="1">Judge</option>
-                                                        </select>
-                                                    </td>
-                                                    <td><button class="btn btn-primary btn-sm" v-on:click="addPerson(person.judging_pin, $event)">Add</button></td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <h3>Existing Staff</h3>
-                                    <div class='wrapper' style="overflow-x:hidden; height: 200px">
-                                        <table id="chosen" class="table table-hover table-striped">
-                                            <thead>
-                                                <tr style="background-color:white;">
-                                                    <th>Person</th>
-                                                    <th>Role</th>
-                                                    <th>&nbsp;</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr v-for="entry in selected">
-                                                    <td>((entry.person.name))</td>
-                                                    <td>
-                                                       <span v-if="entry.role == 0">Logistic / Deck Captain</span>
-                                                       <span v-else>Judge</span>
-                                                    </td>
-                                                    <td><button class="btn btn-danger btn-sm" v-on:click="removePerson(entry.person.judging_pin)"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                          {% if request.user.dancer.owned_studio == competition.host %}
-                                        <form method="post" id="staff_form" style="margin-left: 15px;">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="form_type" value="staff">
-                                            <input type="hidden" id="staff_values" name="staff" value="">
-                                            <button type="button" onclick="handleSubmission(event)" class="btn btn-primary">Submit Changes</button>
-                                        </form>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="col-lg-8" id="staffZone" data-js-vars="{{ users }}" heat_list-js-vars="{{ heat_list }}" events-js-vars="{{ events }}" heats-js-vars="{{ heats }}" staff-js-vars="{{ staff }}" >
             <div class="row">
                 <div class="col-lg-12">
                     <div class="panel panel-primary" id="eventDetails">
                         <div class="panel-heading">
-                            <h4>Round Details</h4>
+                            <h4>((heat.name)) Round Details</h4>
                         </div>
                         <div class="panel-body">
                             <div class="wrapper" style="overflow-x: hidden; height: 600px">
@@ -289,7 +197,7 @@
                                                 ((couple.follow.name))
                                             </td>
                                             <td>
-                                                <input type="checkbox" v-on:click="checkIn(couple.number)">
+                                                <input type="checkbox" class="coupleCheck" v-bind:id="couple.number" v-on:click="checkIn(couple.number)">
                                             </td>
                                             <td><button class="btn btn-sm btn-danger" type="button" v-on:click="dq(couple.number)">DQ</button></td>
                                         </tr>
@@ -387,16 +295,65 @@
                 data: {
                     round_dancers: [],
                     heat: {},
+                    selected: false
+                },
+                mounted: function() {
+                    var selected = this.selected
+                    var round_dancers = this.round_dancers
+                    var heat = this.heat
+                    setTimeout((function worker() {
+                        if (eventDetails.selected) {
+                            var dancers = [];
+                            for (var x = 0; x < eventDetails.round_dancers.length; x++) {
+                                if (typeof eventDetails.round_dancers[x].checked != "undefined" && 
+                                        eventDetails.round_dancers[x].checked == true) {
+                                    console.log("found one!")
+                                    dancers.push(eventDetails.round_dancers[x].number)
+                                }
+                            }
+                            console.log(dancers)
+                            $.post("{% url 'competition:manage' competition=competition.id %}", {
+                                form_type: "compare_heat",
+                                csrfmiddlewaretoken: "{{csrf_token}}",
+                                "heat": eventDetails.heat.id,
+                                "dancers": dancers
+                            }, function(response, status, xhr) {
+                                console.log(response)
+                                if (response.changed) {
+                                    for (var x = 0; x < response.dancers.length; x++) {
+                                        var couple = eventDetails.round_dancers.find(function(couple) {
+                                            return couple.number == response.dancers[x]
+                                        })
+                                        console.log(couple)
+                                        couple.checked = true;
+                                        $("#" + couple.number + ".coupleCheck").prop("checked", true)
+                                    }
+                                }
+                            }).always(function(data) {
+                                if (eventDetails.selected)
+                                    setTimeout(worker, 500);
+                            })
+                        }
+                        else {
+                            setTimeout(worker, 1000);
+                        }
+                    })(),1000)
                 },
                 methods: {
+                    check: function() {
+                        
+                    },
                     checkIn: function(id) {
                         console.log(id);
+                        coupleIndex = eventDetails.round_dancers.findIndex(function(couple) {
+                            return couple.number == id
+                        })
+                        eventDetails.round_dancers[coupleIndex].checked = true;
                     },
                     dq: function(id) {
                         console.log(id)
                     }
-                },
-                    
+                },     
             })
             // heats app
             eventApp = new Vue({
@@ -467,7 +424,7 @@
                             status = encoded_heats.replace(/\s/g,'')
                             var hash = $.sha256(status);
                             $.post("{% url 'competition:manage' competition=competition.id %}", {
-                                form_type: "checkin",
+                                form_type: "refresh",
                                 csrfmiddlewaretoken: "{{csrf_token}}",
                                 hash: hash
                             }, function(response, status, xhr) {
@@ -528,6 +485,7 @@
                             return heat.id == id
                         })[0];
                         eventDetails.heat = heat;
+                        eventDetails.selected = true;
                         eventDetails.round_dancers = heat.dancers;
                     },
                     publish: function() {
@@ -537,100 +495,11 @@
                             heatOrder: $("#sortableHeats").sortable("toArray")
                         }, function(response) {
                             console.log(response)
-                            showSuccesMessage("Event timetable published.")
+                            showSuccessMessage("Event timetable published.")
                         })
                     },
                     checkData: function() {
                     }
-                }
-            })
-            // staff app
-            app = new Vue({
-                el: "#staffZone",
-                store: store,
-                delimiters: ["((","))"],
-                data: {
-                    text: "",
-                    selected: [],
-                },
-                mounted: function() {
-                    var data =  $("#staffZone").attr("data-js-vars")
-                    var staff = $("#staffZone").attr("staff-js-vars")
-                   
-                    store.commit("users", processJS(data));
-                    store.commit("saved", processJS(data));
-                    store.dispatch("reorder");
-                    this.selected = processJS(staff);
-                },
-                computed: {
-                    users: function() {
-                        return store.state.users;
-                    },
-                    staff: function() {
-                        return store.state.staff;
-                    },
-                    people: function() {
-                        if (this.text != "") {
-                            var search = this.text
-                            var data = store.state.users;
-                            var filtered = data.filter(function(user) {
-                                return user.name.indexOf(search) > -1
-                            })
-                            return filtered;
-                        }
-                        else {
-                            return []
-                        }
-                    }
-                },
-                methods: {
-                    addPerson: function(id, $event) {
-                        var location;
-                        var filtered = store.state.users.filter(function(user, index) {
-                            if (user.judging_pin == id) {
-                                location = index;
-                            }
-                            return user.judging_pin == id;
-                        })
-                        var array = store.state.users;
-                        array.splice(location, 1)
-                        store.commit("users", array)
-                        var user = filtered[0];
-                        var value = $("#" + user.judging_pin).val()
-                        app.selected.push({person:user, role:value});   
-                    },
-                    removePerson: function(id) {
-                        $.confirm({
-                            title: 'Danger',
-                            closeIcon: true, 
-                            content: "Are you sure you want to do this? It will cause the staff member to lose access to the management system.",
-                            type: 'red',
-                            typeAnimated: true,
-                            backgroundDismiss: true,
-                            buttons: {
-                                confirm: {
-                                    text: 'Confirm',
-                                    btnClass: 'btn-red',
-                                    action: function() {
-                                        var location= app.selected.findIndex(function(entry) {
-                                            return entry.person.judging_pin == id;
-                                        })
-                                        var removed = app.selected.splice(location, 1);
-                                        removed = removed[0];
-                                        var array = store.state.users;
-                                        array.push(removed.person);
-                                        store.commit("users", array);
-                                        store.dispatch("reorder");
-                                    }
-                                },
-                                close: {
-                                    text: 'Close',
-                                    action: function(){
-                                    }
-                                }
-                            }
-                        });
-                    },
                 }
             })
         })

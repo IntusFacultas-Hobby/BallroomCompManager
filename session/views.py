@@ -3,7 +3,8 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.contrib import messages
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import authenticate
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.forms import PasswordChangeForm
@@ -14,6 +15,7 @@ from session.forms import SignUpForm
 from competitor.forms import (
     AssociationForm, DancerForm, StudioRequestForm, StudioForm)
 from competitor.models import Dancer, Request
+from competition.models import Couple
 
 
 def signup(request):
@@ -138,6 +140,17 @@ class ProfileView(LoginRequiredMixin, View):
                 return render(request, 'session/account.html', data)
 
 
+class RegistrationsView(LoginRequiredMixin, View):
+    def get(self, request):
+        request_user = request.user
+        user = User.objects.get(username=request_user.username)
+        dancer = user.dancer
+        events = Couple.objects.filter(Q(lead=dancer) | Q(follow=dancer))
+        return render(request, 'session/account_registrations.html', {
+            "events": events,
+        })
+
+
 class StudioView(LoginRequiredMixin, View):
 
     def get(self, request):
@@ -203,7 +216,8 @@ class DeleteDancer(LoginRequiredMixin, View):
                     dancer.studio = None
                     dancer.save()
                 else:
-                    messages.error(request, "Cannot delete dancer that does not belong to your studio")
+                    messages.error(
+                        request, "Cannot delete dancer that does not belong to your studio")
                     return self.return_default(request, user)
             messages.success(request, "Dancers removed.")
             return HttpResponseRedirect(reverse('session:studio'))
@@ -240,12 +254,14 @@ class RequestConfirm(LoginRequiredMixin, View):
                     req.dancer.save()
                     req.delete()
                 else:
-                    messages.error(request, "Cannot modify requests that do not belong to your studio")
+                    messages.error(
+                        request, "Cannot modify requests that do not belong to your studio")
                     return self.return_default(request, user)
             messages.success(request, "Requests confirmed.")
             return HttpResponseRedirect(reverse('session:studio'))
         else:
-            messages.error(request, "Bad request on Request Confirm. Contact Support.")
+            messages.error(
+                request, "Bad request on Request Confirm. Contact Support.")
             return HttpResponseRedirect(reverse('session:studio'))
 
 

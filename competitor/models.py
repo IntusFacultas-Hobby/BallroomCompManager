@@ -288,7 +288,7 @@ class Dancer(models.Model):
     owned_studio = models.OneToOneField(Studio, on_delete=models.CASCADE,
                                         related_name="owner", blank=True,
                                         null=True)
-    judging_pin = models.IntegerField("Judging Pin", unique=True)
+    judging_pin = models.IntegerField("Identification Pin", unique=True)
     profile = models.OneToOneField(
         User,
         on_delete=models.CASCADE,

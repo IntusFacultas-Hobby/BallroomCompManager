@@ -4,7 +4,10 @@
 {% block title %}Add Events{% endblock %}
 
 {% block content %}
-<div class="row">
+<div id="dances" data-js-vars="{{dances}}">
+    
+</div>
+<div class="row" id="spa">
     <div class="col-sm-12">
         <div class="panel panel-primary">
             <div class="panel-heading">
@@ -20,6 +23,11 @@
                             <thead>
                             <tr>
                                 {% for field in form.visible_fields %}
+                                    {% if forloop.last %}
+                                    <th>
+                                        Dances in Event
+                                    </th>
+                                    {% endif %}
                                     <th>{{ field.label|capfirst }}</th>
                                 {% endfor %}
                             </tr>
@@ -27,6 +35,13 @@
                         {% endif %}
                         <tr class="{% cycle 'row1' 'row2' %} formset_row">
                             {% for field in form.visible_fields %}
+                             {% if forloop.last %}
+                                    <td>
+                                        <select id="dances{{forloop.parentloop.counter}}" class="form-control select2-dance" name="dances[]" multiple="multiple">
+                                            <!-- <option v-for="dance in dances" v-bind:value="dance.id">((dance.name))</option> -->
+                                        </select>
+                                    </td>
+                                    {% endif %}
                                 <td>
                                     {# Include the hidden fields in the form #}
                                     {% if forloop.first %}
@@ -34,6 +49,7 @@
                                             {{ hidden }}
                                         {% endfor %}
                                     {% endif %}
+
                                     {% render_field field class+="form-control" %}
                                     {% if field.errors|length > 0 %}
                                     <div class="form-group">
@@ -46,10 +62,14 @@
                                     {% endif %}
                                 </td>
                             {% endfor %}
+                            
                         </tr>
                     {% endfor %}
                     </table>
                     <button class="btn btn-primary" type="submit">Add Events</button>
+                    <div>
+                      
+                    </div>
                 </form>
             </div>
         </div>
@@ -60,6 +80,7 @@
 
 {% block js %}
 <script type="text/javascript">
+    var loopCounter = 0;
         $('.formset_row').formset({
             addText: 'Add Event',
             deleteText: 'Remove',
@@ -67,6 +88,7 @@
             addCssClass: 'btn btn-sm btn-primary',
             deleteCssClass: 'btn btn-sm btn-block btn-danger',
             added: function(row) {
+                loopCounter++;
                 // this initializes the bootstrap datetimepicker on a new row
                 var formElements = new Array();
                 $(row).each(function(){
@@ -82,6 +104,18 @@
                 $(formElements[0][4]).next().click(function(event) {
                     $(formElements[0][4]).data("DateTimePicker").show();
                 })
+                var dropdown = formElements[0][6];
+                var data =  $("#dances").attr("data-js-vars")
+                data = processJS(data)
+                $.each(data, function() {
+                    $(dropdown).append($("<option />").val(this.id).text(this.name));
+                });
+                $(dropdown).attr("name", "events-" + loopCounter + "-dances[]")
+                $(dropdown).attr("style", "width:100%");
+                $('.select2-dance').select2();
+            },
+            removed: function() {
+                loopCounter--;
             }
         });
         $('.datepicker').on(
@@ -90,6 +124,17 @@
                 $(".bootstrap-datetimepicker-widget").css(
                 "background-color", "#ffffff");
         });
+        $(function() {
+            var $dropdown = $("#dances1");
+            $dropdown.attr("name", "events-0-dances[]")
+            $dropdown.attr("style", "width:100%");
+            var data =  $("#dances").attr("data-js-vars")
+            data = processJS(data)
+            $.each(data, function() {
+                $dropdown.append($("<option />").val(this.id).text(this.name));
+            });
+            $dropdown.select2();
+        })
 </script>
 {% endblock %}
 

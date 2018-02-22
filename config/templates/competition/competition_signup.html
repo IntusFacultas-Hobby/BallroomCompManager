@@ -6,7 +6,7 @@
 <div class="row">
     <div class="col-lg-offset-1 col-lg-10">
         <div class="alert alert-dismissible alert-info">
-            <strong>Heads up!</strong> Resubmitting this form will overwrite your previous submission. Double check with your partner so that you don't double submit!
+            <strong>Heads up!</strong> Resubmitting this form will overwrite your previous submission for all couples you are a part of. Double check with your partner(s) so that you don't double submit!
         </div>
     </div>
 </div>
@@ -152,6 +152,18 @@
     var store;
     var eventApp;
      $(function() {
+        {% if exists %}
+        $.alert({
+            type:"orange",
+            title:"Warning!",
+            content:"You are already registered for this competition. If you resubmit, you will clear all previous registrations you are a part of. Make sure to resubmit a full registration.",
+            backgroundDismiss: false,
+            buttons: {
+                Ok: function () {
+                }
+            }
+        })
+        {% endif %}
         $('.form-group').each(function() {
             var formGroup = $(this),
                 formgroupWidth = formGroup.outerWidth();

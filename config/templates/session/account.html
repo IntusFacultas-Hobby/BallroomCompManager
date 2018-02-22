@@ -28,10 +28,10 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td>Judging Pin:</td><td>{{ dancer.judging_pin }}</td>
+                                    <td>Account Pin:</td><td>{{ dancer.judging_pin }}</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2"><small>Your judging pin will be used by studios to register you as a judge</small></td>
+                                    <td colspan="2"><small>Your account pin uniquely identifies you. When someone wants to add you as a partner, deck captain, judge, or any other role for a competition, they can search for you via your pin, or your name.</small></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -111,6 +111,7 @@
                         Change Studio Association
                     </div>
                     <div class="panel-body">
+                        <small>Every studio owner will have a pin on their studio account that they can give to their students. Ask your studio owner for the pin, and enter it here. Then when they accept your association request, your studio affiliation will be updated.</small>
                         <form class="form-horizontal" style="margin:20px;" method="post">
                             {% csrf_token %}
                             <input type="hidden" name="form_type" value="association_form">
@@ -132,6 +133,7 @@
                             </div>
                             {% endif %}
                             {% endfor %}
+
                             <button class="btn btn-primary" type="submit">Submit</button>
                         </form>
                     </div>
